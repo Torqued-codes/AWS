@@ -1,0 +1,429 @@
+import { Question, Student, Announcement, Badge } from '../types';
+
+export const INITIAL_BADGES: Badge[] = [
+  {
+    id: 'badge_iam',
+    title: 'IAM Guardian',
+    iconName: 'ShieldCheck',
+    description: 'Master least-privilege security policies, roles, and MFA',
+    domain: 'IAM & Security',
+    unlocked: true,
+  },
+  {
+    id: 'badge_s3',
+    title: 'S3 Alchemist',
+    iconName: 'Database',
+    description: 'Flawlessly understand bucket lifecycle rules and storage classes',
+    domain: 'Storage (S3 & EBS)',
+    unlocked: true,
+  },
+  {
+    id: 'badge_vpc',
+    title: 'VPC Architect',
+    iconName: 'Network',
+    description: 'Configured subnets, route tables, and NAT Gateways with zero leaks',
+    domain: 'VPC & Networking',
+    unlocked: false,
+  },
+  {
+    id: 'badge_serverless',
+    title: 'Serverless Wizard',
+    iconName: 'Zap',
+    description: 'Harnessed the power of Lambda event triggers and API Gateway',
+    domain: 'Compute (EC2 & Lambda)',
+    unlocked: false,
+  },
+  {
+    id: 'badge_streak_7',
+    title: '7-Day Cloud Streak',
+    iconName: 'Flame',
+    description: 'Participated in consecutive daily AWS challenges for an entire week',
+    domain: 'General',
+    unlocked: true,
+  },
+  {
+    id: 'badge_apex',
+    title: 'Skyline Apex Monolith',
+    iconName: 'Building2',
+    description: 'Reached over 1000+ points and constructed an Apex Mega-Tower',
+    domain: 'General',
+    unlocked: false,
+  }
+];
+
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 'ann_1',
+    title: '🔥 AWS Certified Cloud Practitioner Voucher 50% Discount Available',
+    category: 'Voucher',
+    description: 'AWS has opened 50% exam discount vouchers for registered college chapter students. Valid until next month end!',
+    linkUrl: 'https://aws.amazon.com/certification/certified-cloud-practitioner/',
+    linkText: 'Claim Exam Discount',
+    date: 'Aug 20, 2026',
+    isHot: true
+  },
+  {
+    id: 'ann_2',
+    title: '⚡ AWS Community Day Student Hackathon & Architecture Slam',
+    category: 'Hackathon',
+    description: 'Build a serverless generative AI app using AWS Bedrock & Lambda. Total prize pool ₹50,000 + AWS Swag Kits!',
+    linkUrl: 'https://aws.amazon.com/events/',
+    linkText: 'Register Team (3-4 Members)',
+    date: 'Aug 28, 2026',
+    isHot: true
+  },
+  {
+    id: 'ann_3',
+    title: '🎓 Hands-On Workshop: VPC Peering & Security Deep Dive',
+    category: 'Workshop',
+    description: 'Join this Saturday at 6:00 PM on Google Meet. Live demo of Multi-Tier Architecture & Bastion Hosts by AWS Community Builder.',
+    linkUrl: '#',
+    linkText: 'Add to Calendar',
+    date: 'Aug 24, 2026',
+    isHot: false
+  }
+];
+
+export const INITIAL_QUESTIONS: Question[] = [
+  {
+    id: 'q_1',
+    weekNumber: 1,
+    domain: 'IAM & Security',
+    difficulty: 'Associate',
+    questionText: 'An application running on an EC2 instance needs to securely read objects from an Amazon S3 bucket. According to AWS Security Best Practices, what is the MOST secure approach?',
+    options: [
+      { key: 'A', text: 'Hardcode AWS Access Key ID and Secret Access Key inside the application configuration file.' },
+      { key: 'B', text: 'Create an IAM Role with read-only S3 permissions and attach the IAM Instance Profile to the EC2 instance.' },
+      { key: 'C', text: 'Store the IAM credentials in environment variables on the EC2 instance.' },
+      { key: 'D', text: 'Make the S3 bucket publicly readable with a permissive bucket policy.' }
+    ],
+    correctOption: 'B',
+    explanation: 'Using IAM Roles with EC2 Instance Profiles eliminates the need to manage permanent AWS credentials. AWS STS automatically rotates temporary security credentials for the instance.',
+    awsDocTopic: 'IAM Roles for Amazon EC2'
+  },
+  {
+    id: 'q_2',
+    weekNumber: 1,
+    domain: 'Storage (S3 & EBS)',
+    difficulty: 'Beginner',
+    questionText: 'A startup needs to archive compliance logs for 7 years. These logs are rarely accessed (perhaps once a year), but when requested, a retrieval time of 12 hours is completely acceptable. Which S3 Storage Class offers the lowest cost?',
+    options: [
+      { key: 'A', text: 'Amazon S3 Standard' },
+      { key: 'B', text: 'Amazon S3 Standard-Infrequent Access (S3 Standard-IA)' },
+      { key: 'C', text: 'Amazon S3 Glacier Instant Retrieval' },
+      { key: 'D', text: 'Amazon S3 Glacier Deep Archive' }
+    ],
+    correctOption: 'D',
+    explanation: 'S3 Glacier Deep Archive is Amazon S3’s lowest-cost storage tier for long-term retention where retrieval times of 12 to 48 hours are acceptable.',
+    awsDocTopic: 'Amazon S3 Storage Classes'
+  },
+  {
+    id: 'q_3',
+    weekNumber: 1,
+    domain: 'VPC & Networking',
+    difficulty: 'Associate',
+    questionText: 'You have deployed a database instance in a private subnet. The database requires occasional outbound internet access to download OS security patches, but must NOT accept inbound connections from the internet. Which component should be configured?',
+    options: [
+      { key: 'A', text: 'Attach an Internet Gateway directly to the private subnet.' },
+      { key: 'B', text: 'Place a NAT Gateway in a public subnet and route 0.0.0.0/0 from the private subnet to the NAT Gateway.' },
+      { key: 'C', text: 'Enable Public IPv4 assignment on the database instance.' },
+      { key: 'D', text: 'Attach a Virtual Private Gateway (VGW) and configure Direct Connect.' }
+    ],
+    correctOption: 'B',
+    explanation: 'A NAT (Network Address Translation) Gateway enables instances in a private subnet to connect to external services outside the VPC while preventing the internet from initiating connections directly with those instances.',
+    awsDocTopic: 'Amazon VPC NAT Gateways'
+  },
+  {
+    id: 'q_4',
+    weekNumber: 1,
+    domain: 'Compute (EC2 & Lambda)',
+    difficulty: 'Associate',
+    questionText: 'A high-traffic web application receives bursty image upload requests and resizes them. The execution time for resizing is always under 30 seconds. Which architecture provides maximum elasticity with zero server management?',
+    options: [
+      { key: 'A', text: 'Amazon EC2 Auto Scaling Group with t3.micro instances running constantly.' },
+      { key: 'B', text: 'Amazon S3 Event Notifications triggering an AWS Lambda function with AWS Step Functions.' },
+      { key: 'C', text: 'Amazon ECS on EC2 with a fixed cluster size.' },
+      { key: 'D', text: 'An AWS Elastic Beanstalk single-instance environment.' }
+    ],
+    correctOption: 'B',
+    explanation: 'AWS Lambda is an event-driven serverless compute service that scales automatically in response to S3 upload events, running code only when triggered with zero idle server costs.',
+    awsDocTopic: 'Serverless File Processing on AWS'
+  },
+  {
+    id: 'q_5',
+    weekNumber: 1,
+    domain: 'Databases (RDS & DynamoDB)',
+    difficulty: 'Associate',
+    questionText: 'An e-commerce gaming leaderboard needs single-digit millisecond latency for millions of read/write requests with a flexible key-value schema. Which AWS managed database service is purpose-built for this?',
+    options: [
+      { key: 'A', text: 'Amazon Aurora PostgreSQL' },
+      { key: 'B', text: 'Amazon Redshift' },
+      { key: 'C', text: 'Amazon DynamoDB with DynamoDB Accelerator (DAX)' },
+      { key: 'D', text: 'Amazon DocumentDB (with MongoDB compatibility)' }
+    ],
+    correctOption: 'C',
+    explanation: 'Amazon DynamoDB is a fully managed NoSQL key-value and document database that delivers consistent, single-digit millisecond performance at any scale. DAX adds microsecond in-memory caching.',
+    awsDocTopic: 'Amazon DynamoDB Overview'
+  },
+  {
+    id: 'q_6',
+    weekNumber: 1,
+    domain: 'Cloud Architecture & Cost',
+    difficulty: 'Beginner',
+    questionText: 'Under the AWS Shared Responsibility Model, which of the following is the SOLE responsibility of the customer when using Amazon EC2?',
+    options: [
+      { key: 'A', text: 'Physical security of the data center facilities.' },
+      { key: 'B', text: 'Hypervisor patching and underlying hardware maintenance.' },
+      { key: 'C', text: 'Guest Operating System updates, firewall/security group configuration, and application data.' },
+      { key: 'D', text: 'Decommissioning failed hard disk drives.' }
+    ],
+    correctOption: 'C',
+    explanation: 'AWS is responsible for "Security OF the Cloud" (hardware, software, networking, data centers). The customer is responsible for "Security IN the Cloud" (guest OS, security groups, patch management, customer data).',
+    awsDocTopic: 'AWS Shared Responsibility Model'
+  },
+  {
+    id: 'q_7',
+    weekNumber: 1,
+    domain: 'VPC & Networking',
+    difficulty: 'Associate',
+    questionText: 'What is the primary difference between an AWS Security Group and a Network Access Control List (NACL)?',
+    options: [
+      { key: 'A', text: 'Security Groups are stateless and operate at the subnet level; NACLs are stateful and operate at the instance level.' },
+      { key: 'B', text: 'Security Groups are stateful and operate at the instance (ENI) level; NACLs are stateless and operate at the subnet level.' },
+      { key: 'C', text: 'Security Groups only support DENY rules, whereas NACLs only support ALLOW rules.' },
+      { key: 'D', text: 'There is no functional difference; they are interchangeable.' }
+    ],
+    correctOption: 'B',
+    explanation: 'Security Groups operate at the ENI/instance level and are stateful (return traffic is automatically allowed). Network ACLs operate at the subnet boundary and are stateless (inbound and outbound rules must be explicitly defined).',
+    awsDocTopic: 'Security Groups vs Network ACLs'
+  },
+  {
+    id: 'q_8',
+    weekNumber: 1,
+    domain: 'Compute (EC2 & Lambda)',
+    difficulty: 'Associate',
+    questionText: 'An enterprise wants to run batch video-rendering workloads that can tolerate interruptions and be resumed later. Which EC2 purchasing option provides up to 90% discount compared to On-Demand pricing?',
+    options: [
+      { key: 'A', text: 'Savings Plans (3-year term)' },
+      { key: 'B', text: 'Dedicated Hosts' },
+      { key: 'C', text: 'EC2 Spot Instances' },
+      { key: 'D', text: 'Standard Reserved Instances' }
+    ],
+    correctOption: 'C',
+    explanation: 'Amazon EC2 Spot Instances let you take advantage of unused EC2 capacity in the AWS cloud at up to 90% discount compared to On-Demand prices, ideal for fault-tolerant batch processing.',
+    awsDocTopic: 'Amazon EC2 Spot Instances'
+  }
+];
+
+export const MOCK_STUDENTS: Student[] = [
+  {
+    id: 'stu_1',
+    name: 'Aarav Sharma',
+    rollNumber: '22CS104',
+    department: 'CSE',
+    year: 3,
+    points: 1250,
+    weeklyPoints: 350,
+    streak: 14,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: ['badge_iam', 'badge_s3', 'badge_vpc', 'badge_streak_7', 'badge_apex'],
+    buildingTier: 'apex_monolith',
+    floors: 26,
+    accentColor: '#FF9900',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aarav',
+    rankWeekly: 1,
+    rankMonthly: 1
+  },
+  {
+    id: 'stu_2',
+    name: 'Sneha Reddy',
+    rollNumber: '23IT045',
+    department: 'IT',
+    year: 2,
+    points: 1100,
+    weeklyPoints: 300,
+    streak: 11,
+    hearts: 4,
+    lastHeartLossTime: Date.now() - 1000 * 60 * 20,
+    unlockedBadges: ['badge_iam', 'badge_s3', 'badge_serverless', 'badge_streak_7', 'badge_apex'],
+    buildingTier: 'apex_monolith',
+    floors: 23,
+    accentColor: '#00FFA3',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sneha',
+    rankWeekly: 2,
+    rankMonthly: 2
+  },
+  {
+    id: 'stu_3',
+    name: 'Rohan Patel',
+    rollNumber: '22AI019',
+    department: 'AI & Data Science',
+    year: 3,
+    points: 950,
+    weeklyPoints: 250,
+    streak: 9,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: ['badge_iam', 'badge_s3', 'badge_streak_7'],
+    buildingTier: 'cyber_tower',
+    floors: 20,
+    accentColor: '#8B5CF6',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Rohan',
+    rankWeekly: 3,
+    rankMonthly: 3
+  },
+  {
+    id: 'stu_4',
+    name: 'Ananya Verma',
+    rollNumber: '24CS210',
+    department: 'CSE',
+    year: 1,
+    points: 750,
+    weeklyPoints: 200,
+    streak: 6,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: ['badge_iam', 'badge_s3'],
+    buildingTier: 'cyber_tower',
+    floors: 16,
+    accentColor: '#06B6D4',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Ananya',
+    rankWeekly: 4,
+    rankMonthly: 4
+  },
+  {
+    id: 'stu_5',
+    name: 'Karthik Raja',
+    rollNumber: '23EC082',
+    department: 'ECE',
+    year: 2,
+    points: 620,
+    weeklyPoints: 180,
+    streak: 5,
+    hearts: 3,
+    lastHeartLossTime: Date.now() - 1000 * 60 * 50,
+    unlockedBadges: ['badge_iam'],
+    buildingTier: 'cyber_tower',
+    floors: 13,
+    accentColor: '#EC4899',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Karthik',
+    rankWeekly: 5,
+    rankMonthly: 5
+  },
+  {
+    id: 'stu_6',
+    name: 'Pooja Nair',
+    rollNumber: '22CY031',
+    department: 'Cyber Security',
+    year: 3,
+    points: 580,
+    weeklyPoints: 150,
+    streak: 8,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: ['badge_iam', 'badge_streak_7'],
+    buildingTier: 'datacenter',
+    floors: 12,
+    accentColor: '#10B981',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Pooja',
+    rankWeekly: 6,
+    rankMonthly: 6
+  },
+  {
+    id: 'stu_7',
+    name: 'Vikram Joshi',
+    rollNumber: '23AI112',
+    department: 'AI & Data Science',
+    year: 2,
+    points: 480,
+    weeklyPoints: 120,
+    streak: 4,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: ['badge_s3'],
+    buildingTier: 'datacenter',
+    floors: 10,
+    accentColor: '#F59E0B',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Vikram',
+    rankWeekly: 7,
+    rankMonthly: 7
+  },
+  {
+    id: 'stu_8',
+    name: 'Divya Iyer',
+    rollNumber: '24IT008',
+    department: 'IT',
+    year: 1,
+    points: 390,
+    weeklyPoints: 90,
+    streak: 3,
+    hearts: 2,
+    lastHeartLossTime: Date.now() - 1000 * 60 * 15,
+    unlockedBadges: ['badge_iam'],
+    buildingTier: 'datacenter',
+    floors: 8,
+    accentColor: '#3B82F6',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Divya',
+    rankWeekly: 8,
+    rankMonthly: 8
+  },
+  {
+    id: 'stu_9',
+    name: 'Mohammed Zaid',
+    rollNumber: '23CS099',
+    department: 'CSE',
+    year: 2,
+    points: 250,
+    weeklyPoints: 70,
+    streak: 2,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: ['badge_iam'],
+    buildingTier: 'datacenter',
+    floors: 6,
+    accentColor: '#A855F7',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Zaid',
+    rankWeekly: 9,
+    rankMonthly: 9
+  },
+  {
+    id: 'stu_10',
+    name: 'Meera Menon',
+    rollNumber: '24EC054',
+    department: 'ECE',
+    year: 1,
+    points: 140,
+    weeklyPoints: 40,
+    streak: 1,
+    hearts: 5,
+    lastHeartLossTime: null,
+    unlockedBadges: [],
+    buildingTier: 'shack',
+    floors: 3,
+    accentColor: '#E11D48',
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Meera',
+    rankWeekly: 10,
+    rankMonthly: 10
+  }
+];
+
+export const CURRENT_DEFAULT_USER: Student = {
+  id: 'current_spoc_user',
+  name: 'Dev Cadet (You)',
+  rollNumber: '23CS001',
+  department: 'CSE',
+  year: 3,
+  points: 450,
+  weeklyPoints: 150,
+  streak: 5,
+  hearts: 5,
+  lastHeartLossTime: null,
+  unlockedBadges: ['badge_iam', 'badge_s3', 'badge_streak_7'],
+  buildingTier: 'datacenter',
+  floors: 10,
+  accentColor: '#FF9900',
+  avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Cadet',
+  rankWeekly: 6,
+  rankMonthly: 7
+};
