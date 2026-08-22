@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 import { Department, Gender } from '../../types';
+import { isTopFive } from '../../utils/ranking';
 
 const DEPARTMENTS: Department[] = ['CSE', 'IT', 'AI & Data Science', 'ECE', 'Cyber Security', 'CS-BS'];
 const GENDERS: Gender[] = ['Male', 'Female', 'Other'];
@@ -37,7 +38,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   onClose,
   onOpenCertificate
 }) => {
-  const { currentUser, badges, submissions, updateUserProfile, logoutUser } = useGame();
+  const { currentUser, badges, submissions, updateUserProfile, logoutUser, isCertEligible } = useGame();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser.name);
@@ -357,17 +358,24 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
           {/* Action */}
           <div className="pt-4 border-t border-zinc-800 space-y-2">
-            <button
-              onClick={() => {
-                soundEngine.playTap();
-                onOpenCertificate();
-                onClose();
-              }}
-              className="w-full py-3 rounded-xl bg-aws-orange hover:bg-amber-500 text-zinc-950 font-display font-bold text-sm flex items-center justify-center gap-2 transition-all"
-            >
-              <Award className="w-4 h-4" />
-              <span>View & Download Certificate</span>
-            </button>
+            {isCertEligible(currentUser.id) ? (
+              <button
+                onClick={() => {
+                  soundEngine.playTap();
+                  onOpenCertificate();
+                  onClose();
+                }}
+                className="w-full py-3 rounded-xl bg-aws-orange hover:bg-amber-500 text-zinc-950 font-display font-bold text-sm flex items-center justify-center gap-2 transition-all"
+              >
+                <Award className="w-4 h-4" />
+                <span>View & Download Certificate</span>
+              </button>
+            ) : (
+              <div className="w-full py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 font-mono text-xs flex items-center justify-center gap-2 text-center px-3">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>Certificates unlock at Top 5 (weekly or monthly)</span>
+              </div>
+            )}
 
             <button
               onClick={() => { soundEngine.playTap(); logoutUser(); }}
@@ -383,7 +391,3 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
     </div>
   );
 };
-
-
-
-

@@ -192,7 +192,6 @@ export const QuizArena: React.FC = () => {
           </div>
         </div>
       ) : currentQuestion ? (
-        /* Active Question Display */
         <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xl">
           
           {/* Question Metadata */}
@@ -267,6 +266,30 @@ export const QuizArena: React.FC = () => {
 
         </div>
       ) : null}
+
+      {/* Empty state — active week has no question bank yet. Ensures
+          "Weekly Arena" never renders a blank screen even if the SPOC
+          hasn't published this week's sprint. */}
+      {!isWeekCompleted && !currentQuestion && weekQuestions.length === 0 && (
+        <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-10 text-center shadow-xl">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-500">
+            <Terminal className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-mono font-bold text-white mb-1">
+            Week {activeWeek} Sprint Not Published Yet
+          </h2>
+          <p className="text-xs text-zinc-400 font-mono max-w-sm mx-auto mb-6">
+            The SPOC team hasn't added questions for this week yet. Check back soon, or explore the 3D City in the meantime.
+          </p>
+          <button
+            onClick={() => { soundEngine.playTap(); setActiveTab('city'); }}
+            className="px-6 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-mono font-semibold text-xs inline-flex items-center gap-2 transition-all"
+          >
+            <Building2 className="w-4 h-4" />
+            <span>Explore 3D City</span>
+          </button>
+        </div>
+      )}
 
       {/* Result Explanation Modal */}
       {lastAnswerResult && (

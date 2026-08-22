@@ -53,6 +53,7 @@ interface GameContextType {
   removeStudent: (studentId: string) => void;
   updateUserProfile: (updates: Partial<Student>) => void;
   trackActiveDay: () => void;
+  isCertEligible: (studentId: string) => boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -391,6 +392,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ...studentList.filter(s => s.id !== currentUser.id)
   ].sort((a, b) => b.points - a.points);
 
+  // Weekly / monthly (all-time) rankings, used to gate certificate access
+  // to only the current top-5 performers. "Monthly" reuses the same
+  // all-time point totals as `allStudents` since that's the full-history
+  // metric; weekly uses each student's rolling weeklyPoints.
+  const weeklyRanked = [...allStudents].sort(
+    (a, b) => (b.weeklyPoints || b.points) - (a.weeklyPoints || a.points)
+  );
+  const monthlyRanked = allStudents; // already sorted by all-time points
+
+  // A student may only generate/download a certificate for themselves,
+  // and only while they hold a Top-5 spot on either the weekly or the
+  // monthly/all-time leaderboard.
+  const isCertEligible = useCallback((studentId: string): boolean => {
+    if (studentId !== currentUser.id) return false;
+    const weeklyIdx = weeklyRanked.findIndex(s => s.id === studentId);
+    const monthlyIdx = monthlyRanked.findIndex(s => s.id === studentId);
+    return (weeklyIdx >= 0 && weeklyIdx < 5) || (monthlyIdx >= 0 && monthlyIdx < 5);
+  }, [currentUser.id, weeklyRanked, monthlyRanked]);
+
   return (
     <GameContext.Provider
       value={{
@@ -428,6 +448,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeStudent,
         updateUserProfile,
         trackActiveDay,
+        isCertEligible,
       }}
     >
       {children}

@@ -16,6 +16,34 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 import { HeroAWSScene } from './HeroAWSScene';
+import { HeroThreeScene } from './HeroThreeScene';
+
+// Typed shape for the metrics bar — deliberately decoupled from any one
+// data source. Today these four values are derived from the in-memory
+// `students`/`questions` state; once Supabase is wired in, the same
+// shape can be populated from a `select count(*) ...` / realtime
+// subscription without touching the render layer below.
+interface StatCardData {
+  label: string;
+  value: string;
+  sub: string;
+  color: string;
+  glow: string;
+}
+
+const StatCard: React.FC<{ stat: StatCardData }> = ({ stat }) => (
+  <div
+    className={`group relative backdrop-blur-xl bg-neutral-900/50 border border-neutral-800 hover:border-amber-500/30 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 ${stat.glow} cursor-default`}
+  >
+    {/* Inner glow on hover */}
+    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+      style={{ background: 'radial-gradient(ellipse at center, rgba(255,153,0,0.05) 0%, transparent 70%)' }} />
+
+    <div className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mb-2">{stat.label}</div>
+    <div className={`text-2xl sm:text-3xl font-stats font-bold ${stat.color} leading-none`}>{stat.value}</div>
+    <div className="text-[11px] text-zinc-500 font-sans mt-1">{stat.sub}</div>
+  </div>
+);
 
 export const HomePage: React.FC = () => {
   const { students, questions, activeWeek, currentUser, setActiveTab } = useGame();
@@ -24,7 +52,7 @@ export const HomePage: React.FC = () => {
   const totalPoints = students.reduce((sum, s) => sum + s.points, 0);
   const weekQCount = questions.filter(q => q.weekNumber === activeWeek).length;
 
-  const stats = [
+  const stats: StatCardData[] = [
     { label: 'REGISTERED TOWERS', value: students.length.toString(), sub: 'Active Architects', color: 'text-emerald-400', glow: 'group-hover:shadow-[0_0_20px_rgba(52,211,153,0.15)]' },
     { label: 'TOTAL SCORE POOL', value: totalPoints.toLocaleString(), sub: 'Cumulative Points', color: 'text-aws-orange', glow: 'group-hover:shadow-[0_0_20px_rgba(255,153,0,0.15)]' },
     { label: 'APEX HEIGHT', value: `${highestFloors}F`, sub: 'Tallest Tower', color: 'text-cyan-400', glow: 'group-hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]' },
@@ -92,6 +120,11 @@ export const HomePage: React.FC = () => {
           {/* Horizontal rule divider line (Vercel-esque) */}
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
         </div>
+
+        {/* Ambient Three.js mesh field — genuine WebGL low-poly nodes in
+            the amber/gold palette, rendered behind the HTML service-icon
+            labels/lines below so both layers combine into one scene. */}
+        <HeroThreeScene />
 
         {/* Floating AWS service icons */}
         <HeroAWSScene />
@@ -171,18 +204,7 @@ export const HomePage: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className={`group relative bg-neutral-900/40 backdrop-blur-xl border border-neutral-800/60 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 ${stat.glow} cursor-default`}
-              >
-                {/* Inner glow on hover */}
-                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{ background: 'radial-gradient(ellipse at center, rgba(255,153,0,0.04) 0%, transparent 70%)' }} />
-                
-                <div className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest mb-2">{stat.label}</div>
-                <div className={`text-2xl sm:text-3xl font-stats font-bold ${stat.color} leading-none`}>{stat.value}</div>
-                <div className="text-[11px] text-zinc-500 font-sans mt-1">{stat.sub}</div>
-              </div>
+              <StatCard key={stat.label} stat={stat} />
             ))}
           </div>
         </div>
@@ -209,14 +231,20 @@ export const HomePage: React.FC = () => {
               return (
                 <div
                   key={f.title}
-                  className="group bg-neutral-900/40 border border-neutral-800/60 backdrop-blur-sm rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:border-neutral-700/60"
+                  className="group relative backdrop-blur-xl bg-neutral-900/50 border border-neutral-800 hover:border-amber-500/30 rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
                 >
-                  <div>
+                  {/* Subtle glow that blooms in on hover, matching the card border accent */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                    style={{ background: 'radial-gradient(ellipse at top right, rgba(245,158,11,0.06) 0%, transparent 65%)' }}
+                  />
+
+                  <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <div className={`w-10 h-10 rounded-xl ${f.iconBg} border flex items-center justify-center ${f.iconColor}`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-lg">
+                      <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-950/80 border border-zinc-800 px-2 py-1 rounded-lg tracking-wide">
                         {f.tag}
                       </span>
                     </div>
@@ -227,7 +255,7 @@ export const HomePage: React.FC = () => {
                       {f.desc}
                     </p>
                   </div>
-                  <div className="mt-5 pt-4 border-t border-neutral-800/60 flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
+                  <div className="relative z-10 mt-5 pt-4 border-t border-neutral-800/80 flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Included in this sprint</span>
                   </div>
@@ -294,4 +322,3 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
-

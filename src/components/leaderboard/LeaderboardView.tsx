@@ -22,7 +22,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   onOpenCertificate,
   onSelectStudent
 }) => {
-  const { students, currentUser } = useGame();
+  const { students, currentUser, isCertEligible } = useGame();
   const [timeframe, setTimeframe] = useState<'weekly' | 'monthly'>('weekly');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState<Department | 'ALL'>('ALL');
@@ -225,16 +225,24 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     </td>
 
                     <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => {
-                          soundEngine.playTap();
-                          onOpenCertificate(student);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-[11px] transition-all inline-flex items-center gap-1 mx-auto"
-                      >
-                        <Award className="w-3 h-3 text-aws-orange" />
-                        <span>Cert</span>
-                      </button>
+                      {/* "Generate Official Certificate" is only ever shown
+                          to the profile owner, and only once they hold a
+                          Top-5 spot (weekly or monthly). Peers viewing this
+                          row never see the action. */}
+                      {isCurrent && isCertEligible(student.id) ? (
+                        <button
+                          onClick={() => {
+                            soundEngine.playTap();
+                            onOpenCertificate(student);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 text-[11px] transition-all inline-flex items-center gap-1 mx-auto"
+                        >
+                          <Award className="w-3 h-3 text-aws-orange" />
+                          <span>Cert</span>
+                        </button>
+                      ) : (
+                        <span className="text-zinc-700 text-[10px]">—</span>
+                      )}
                     </td>
 
                   </tr>

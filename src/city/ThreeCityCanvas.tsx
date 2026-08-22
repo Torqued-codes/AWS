@@ -580,10 +580,3 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     </div>
   );
 };
-
-
-
-
-
-
-

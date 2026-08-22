@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cloud, ArrowRight, Eye, EyeOff, AlertCircle, User, Hash, GraduationCap, ChevronDown } from 'lucide-react';
+import { Cloud, ArrowRight, Eye, EyeOff, AlertCircle, User, Hash, GraduationCap, ChevronDown, KeyRound } from 'lucide-react';
 import { Department, Gender, Student } from '../../types';
 import { CURRENT_DEFAULT_USER } from '../../data/mockData';
 
@@ -25,8 +25,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [gender, setGender] = useState<Gender>('Male');
   const [department, setDepartment] = useState<Department>('CSE');
   const [year, setYear] = useState<1|2|3|4>(1);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
   const [loginRoll, setLoginRoll] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   const handleRegister = (e: React.FormEvent) => {
@@ -39,6 +44,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
     if (!ROLL_PATTERN.test(rollNumber.trim())) {
       setError('Register number format invalid. Example: 24ETCS000001');
+      return;
+    }
+    // Mock password validation — before real Supabase Auth is wired in,
+    // any non-empty password is accepted locally. This keeps the field
+    // present in the UI/data model without blocking local dev testing.
+    if (!password || password.length < 4) {
+      setError('Password must be at least 4 characters.');
       return;
     }
 
@@ -75,6 +87,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     };
 
     localStorage.setItem(`acc_${rollNumber.trim().toUpperCase()}`, JSON.stringify(newUser));
+    // NOTE: storing plaintext locally is a dev-only placeholder until this
+    // is replaced by real Supabase Auth (hashed, server-side). Never do
+    // this in production.
+    localStorage.setItem(`pw_${rollNumber.trim().toUpperCase()}`, password);
     localStorage.setItem('aws_cc_session', rollNumber.trim().toUpperCase());
     onLogin(newUser);
   };
@@ -86,6 +102,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     const stored = localStorage.getItem(`acc_${key}`);
     if (!stored) {
       setLoginError('No account found with this register number. Please register first.');
+      return;
+    }
+    if (!loginPassword) {
+      setLoginError('Please enter your password.');
+      return;
+    }
+    // Mock password check: accepts any non-empty password that matches
+    // what was set at registration, so local testing before Supabase
+    // Auth wiring stays simple.
+    const storedPassword = localStorage.getItem(`pw_${key}`);
+    if (storedPassword && loginPassword !== storedPassword) {
+      setLoginError('Incorrect password.');
       return;
     }
     const user: Student = JSON.parse(stored);
@@ -227,6 +255,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               </div>
             </div>
 
+            <div>
+              <label className="block text-[11px] font-mono font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">Password</label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="At least 4 characters"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors font-sans"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
             {error && (
               <div className="flex items-start gap-2 p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 font-mono">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -269,6 +320,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               </div>
             </div>
 
+            <div>
+              <label className="block text-[11px] font-mono font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">Password</label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showLoginPassword ? 'text' : 'password'}
+                  placeholder="Your password"
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  required
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors font-sans"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                  tabIndex={-1}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
             {loginError && (
               <div className="flex items-start gap-2 p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 font-mono">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -300,3 +374,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     </div>
   );
 };
+
+
+
