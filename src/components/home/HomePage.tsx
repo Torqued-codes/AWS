@@ -108,10 +108,21 @@ export const HomePage: React.FC = () => {
             <Sparkles className="w-3 h-3 text-amber-400/60" />
           </div>
 
-          {/* Main headline — Plus Jakarta Sans with metallic gold-to-amber gradient */}
-          <h1 className="text-5xl sm:text-6xl lg:text-[80px] font-display font-extrabold text-transparent bg-clip-text tracking-tight mb-8">
-            <span style={{ backgroundImage: 'linear-gradient(135deg, #FFBF00 0%, #FF9900 40%, #F59E0B 100%)', webkitBackgroundClip: 'text', textFillColor: 'transparent' }}>
-              Learn AWS in 3D. Construct your skyline.
+          {/* Main headline — Plus Jakarta Sans. Primary words render crisp
+              white with tight tracking; only the key phrases get the
+              metallic gold-to-amber gradient treatment. */}
+          <h1
+            className="text-5xl sm:text-6xl lg:text-[80px] font-display font-extrabold tracking-tight mb-8 text-white"
+            style={{ letterSpacing: '-0.03em' }}
+          >
+            <span>Learn </span>
+            <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent">
+              AWS in 3D.
+            </span>
+            <br className="hidden sm:block" />
+            <span> Construct your </span>
+            <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent">
+              skyline.
             </span>
           </h1>
 
@@ -283,3 +294,4 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+

@@ -222,9 +222,11 @@ export const MOCK_STUDENTS: Student[] = [
     rollNumber: '22CS104',
     department: 'CSE',
     year: 3,
+    gender: 'Male',
     points: 1250,
     weeklyPoints: 350,
     streak: 14,
+    longestStreak: 21,
     hearts: 5,
     lastHeartLossTime: null,
     unlockedBadges: ['badge_iam', 'badge_s3', 'badge_vpc', 'badge_streak_7', 'badge_apex'],
@@ -233,7 +235,9 @@ export const MOCK_STUDENTS: Student[] = [
     accentColor: '#FF9900',
     avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aarav',
     rankWeekly: 1,
-    rankMonthly: 1
+    rankMonthly: 1,
+    isPublic: true,
+    bio: 'Chasing the Solutions Architect Associate cert before graduation.',
   },
   {
     id: 'stu_2',
@@ -241,9 +245,11 @@ export const MOCK_STUDENTS: Student[] = [
     rollNumber: '23IT045',
     department: 'IT',
     year: 2,
+    gender: 'Female',
     points: 1100,
     weeklyPoints: 300,
     streak: 11,
+    longestStreak: 18,
     hearts: 4,
     lastHeartLossTime: Date.now() - 1000 * 60 * 20,
     unlockedBadges: ['badge_iam', 'badge_s3', 'badge_serverless', 'badge_streak_7', 'badge_apex'],
@@ -252,7 +258,11 @@ export const MOCK_STUDENTS: Student[] = [
     accentColor: '#00FFA3',
     avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sneha',
     rankWeekly: 2,
-    rankMonthly: 2
+    rankMonthly: 2,
+    // Demonstrates the private-profile flow: visible on leaderboard rows,
+    // but clicking through shows the "profile is private" toast instead
+    // of the full building modal.
+    isPublic: false,
   },
   {
     id: 'stu_3',
@@ -414,9 +424,11 @@ export const CURRENT_DEFAULT_USER: Student = {
   rollNumber: '23CS001',
   department: 'CSE',
   year: 3,
+  gender: 'Male',
   points: 450,
   weeklyPoints: 150,
   streak: 5,
+  longestStreak: 8,
   hearts: 5,
   lastHeartLossTime: null,
   unlockedBadges: ['badge_iam', 'badge_s3', 'badge_streak_7'],
@@ -425,5 +437,9 @@ export const CURRENT_DEFAULT_USER: Student = {
   accentColor: '#FF9900',
   avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Cadet',
   rankWeekly: 6,
-  rankMonthly: 7
+  rankMonthly: 7,
+  isPublic: true,
+  joinedWeek: 1,
+  activityLog: [],
+  bio: 'Building my AWS skyline one weekly quiz at a time ☁️',
 };

@@ -26,6 +26,8 @@ interface GameContextType {
   isAdminMode: boolean;
   activeTab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin';
   selectedStudentModal: Student | null;
+  privacyNotice: string | null;
+  isAuthenticated: boolean;
   showCooldownModal: boolean;
   lastAnswerResult: {
     question: Question;
@@ -39,6 +41,10 @@ interface GameContextType {
   setActiveTab: (tab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin') => void;
   setIsAdminMode: (admin: boolean) => void;
   setSelectedStudentModal: (student: Student | null) => void;
+  selectStudentForModal: (student: Student) => void;
+  dismissPrivacyNotice: () => void;
+  loginAsUser: (user: Student) => void;
+  logoutUser: () => void;
   setShowCooldownModal: (show: boolean) => void;
   setLastAnswerResult: (result: GameContextType['lastAnswerResult']) => void;
   setActiveWeek: (week: number) => void;
@@ -98,6 +104,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin'>('home');
   const [selectedStudentModal, setSelectedStudentModal] = useState<Student | null>(null);
+  const [privacyNotice, setPrivacyNotice] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return !!localStorage.getItem('aws_cc_session');
+    } catch {
+      return false;
+    }
+  });
   const [showCooldownModal, setShowCooldownModal] = useState<boolean>(false);
   const [lastAnswerResult, setLastAnswerResult] = useState<GameContextType['lastAnswerResult']>(null);
 
@@ -182,6 +196,66 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       s.id === currentUser.id ? { ...s, ...updates } : s
     ));
   }, [currentUser.id]);
+
+  // Respects a student's public/private visibility before opening their
+  // profile/building modal. Own profile is always visible to self.
+  const selectStudentForModal = useCallback((student: Student) => {
+    const isSelf = student.id === currentUser.id;
+    if (isSelf || student.isPublic !== false) {
+      setSelectedStudentModal(student);
+    } else {
+      soundEngine.playWrong();
+      setPrivacyNotice(`${student.name}'s profile is private.`);
+    }
+  }, [currentUser.id]);
+
+  const dismissPrivacyNotice = useCallback(() => setPrivacyNotice(null), []);
+
+  // Auto-dismiss privacy toast after a few seconds
+  useEffect(() => {
+    if (!privacyNotice) return;
+    const t = setTimeout(() => setPrivacyNotice(null), 3200);
+    return () => clearTimeout(t);
+  }, [privacyNotice]);
+
+  const loginAsUser = useCallback((user: Student) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    try {
+      localStorage.setItem('aws_cc_session', user.rollNumber);
+    } catch { /* ignore storage failures */ }
+    // Merge into student list so they appear on leaderboard/city immediately
+    setStudentList(prev => {
+      const exists = prev.some(s => s.id === user.id);
+      return exists ? prev.map(s => (s.id === user.id ? user : s)) : [user, ...prev];
+    });
+  }, []);
+
+  const logoutUser = useCallback(() => {
+    try {
+      localStorage.removeItem('aws_cc_session');
+    } catch { /* ignore */ }
+    setIsAuthenticated(false);
+  }, []);
+
+  // Marks today as an active day for the 5D streak / heatmap views.
+  // Safe to call multiple times per day (de-duplicated by calendar day).
+  const trackActiveDay = useCallback(() => {
+    const now = Date.now();
+    setCurrentUser(prev => {
+      const last = prev.activityLog?.[prev.activityLog.length - 1];
+      if (last) {
+        const lastDate = new Date(last);
+        const today = new Date(now);
+        const sameDay =
+          lastDate.getFullYear() === today.getFullYear() &&
+          lastDate.getMonth() === today.getMonth() &&
+          lastDate.getDate() === today.getDate();
+        if (sameDay) return prev;
+      }
+      return { ...prev, activityLog: [...(prev.activityLog || []), now] };
+    });
+  }, []);
 
   const submitAnswer = useCallback((questionId: string, selectedOption: 'A' | 'B' | 'C' | 'D'): boolean => {
     const question = questions.find(q => q.id === questionId);
@@ -332,6 +406,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdminMode,
         activeTab,
         selectedStudentModal,
+        privacyNotice,
+        isAuthenticated,
         showCooldownModal,
         lastAnswerResult,
         submitAnswer,
@@ -340,6 +416,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveTab,
         setIsAdminMode,
         setSelectedStudentModal,
+        selectStudentForModal,
+        dismissPrivacyNotice,
+        loginAsUser,
+        logoutUser,
         setShowCooldownModal,
         setLastAnswerResult,
         setActiveWeek,
@@ -347,6 +427,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addNewAnnouncement,
         removeStudent,
         updateUserProfile,
+        trackActiveDay,
       }}
     >
       {children}

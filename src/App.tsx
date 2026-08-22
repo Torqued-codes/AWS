@@ -9,12 +9,25 @@ import { EventsHub } from './components/announcements/EventsHub';
 import { AdminPortal } from './components/admin/AdminPortal';
 import { CertificateModal } from './components/certificate/CertificateModal';
 import { ProfileDrawer } from './components/profile/ProfileDrawer';
+import { BuildingModal } from './components/city/BuildingModal';
+import { LoginScreen } from './components/auth/LoginScreen';
 import { Student } from './types';
-import { Cloud, Lock } from 'lucide-react';
+import { Cloud, Lock, ShieldAlert } from 'lucide-react';
 import { soundEngine } from './utils/soundEngine';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, setActiveTab, currentUser, setSelectedStudentModal } = useGame();
+  const {
+    activeTab,
+    setActiveTab,
+    currentUser,
+    selectedStudentModal,
+    setSelectedStudentModal,
+    selectStudentForModal,
+    privacyNotice,
+    dismissPrivacyNotice,
+    isAuthenticated,
+    loginAsUser,
+  } = useGame();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [certStudent, setCertStudent] = useState<Student | null>(null);
   const [isAdminRoute, setIsAdminRoute] = useState<boolean>(() => {
@@ -50,6 +63,12 @@ const MainAppContent: React.FC = () => {
     return <AdminPortal onExitAdmin={handleExitAdmin} />;
   }
 
+  // Gate the entire experience behind student onboarding/login until a
+  // session exists — collects Name, Register Number, Gender, Branch.
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={loginAsUser} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#06080d] text-zinc-100 flex flex-col justify-between selection:bg-aws-orange selection:text-black font-sans">
       
@@ -72,7 +91,7 @@ const MainAppContent: React.FC = () => {
         {activeTab === 'leaderboard' && (
           <LeaderboardView
             onOpenCertificate={handleOpenCertificate}
-            onSelectStudent={(student) => setSelectedStudentModal(student)}
+            onSelectStudent={(student) => selectStudentForModal(student)}
           />
         )}
         {activeTab === 'announcements' && (
@@ -93,6 +112,30 @@ const MainAppContent: React.FC = () => {
         onClose={() => setIsProfileOpen(false)}
         onOpenCertificate={() => handleOpenCertificate(currentUser)}
       />
+
+      {/* Global student profile/building modal — works from any tab
+          (Leaderboard, 3D City, Podium) and always respects the
+          target student's Public/Private visibility setting. */}
+      {selectedStudentModal && (
+        <BuildingModal
+          student={selectedStudentModal}
+          onClose={() => setSelectedStudentModal(null)}
+          onOpenCertificate={handleOpenCertificate}
+        />
+      )}
+
+      {/* Privacy toast — shown briefly when trying to open a private profile */}
+      {privacyNotice && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] animate-fade-in">
+          <div
+            onClick={dismissPrivacyNotice}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/95 border border-zinc-700 shadow-2xl backdrop-blur-md text-xs font-mono text-zinc-200 cursor-pointer"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>{privacyNotice}</span>
+          </div>
+        </div>
+      )}
 
       {/* Sleek Minimal Footer */}
       <footer className="w-full bg-zinc-950 border-t border-zinc-800/80 py-6 px-4 sm:px-6 lg:px-8 text-xs text-zinc-500 font-mono">
@@ -162,3 +205,4 @@ export function App() {
 }
 
 export default App;
+

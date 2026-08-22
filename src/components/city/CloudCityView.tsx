@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { ThreeCityCanvas } from './ThreeCityCanvas';
 import { CityHUDOverlay } from './CityHUDOverlay';
-import { BuildingModal } from './BuildingModal';
 import { Department, Student } from '../../types';
 
 interface CloudCityViewProps {
@@ -10,7 +9,7 @@ interface CloudCityViewProps {
 }
 
 export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate }) => {
-  const { students, currentUser, selectedStudentModal, setSelectedStudentModal, setActiveTab } = useGame();
+  const { students, currentUser, selectStudentForModal, setSelectedStudentModal, setActiveTab } = useGame();
   const [selectedDistrict, setSelectedDistrict] = useState<Department | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [skyTheme, setSkyTheme] = useState<'midnight' | 'sunset' | 'bright'>('midnight');
@@ -40,7 +39,7 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
 
   const handleFlyToMyTower = () => {
     setTargetStudentId(currentUser.id);
-    setSelectedStudentModal(currentUser);
+    setSelectedStudentModal(currentUser); // own profile always visible to self
   };
 
   const handleNavigate = (direction: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout') => {
@@ -55,7 +54,7 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
         selectedDistrict={selectedDistrict}
         searchQuery={searchQuery}
         skyTheme={skyTheme}
-        onSelectStudent={setSelectedStudentModal}
+        onSelectStudent={selectStudentForModal}
         targetStudentId={targetStudentId}
         navEvent={navEvent}
       />
@@ -74,13 +73,8 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
         onNavigate={handleNavigate}
       />
 
-      {selectedStudentModal && (
-        <BuildingModal
-          student={selectedStudentModal}
-          onClose={() => setSelectedStudentModal(null)}
-          onOpenCertificate={onOpenCertificate}
-        />
-      )}
+      {/* Building/profile modal now renders globally from App.tsx so the
+          same click-to-view flow works from the Leaderboard and Podium too. */}
 
     </div>
   );

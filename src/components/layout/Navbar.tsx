@@ -50,8 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-[#06080d]/95 border-b border-zinc-800/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-neutral-900/60 border-b border-neutral-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Left: Brand Logo → Home */}
           <div 
@@ -102,8 +102,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             })}
           </nav>
 
-          {/* Right: HUD & Profile */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right: HUD & Profile — every pill shares the same h-9 height so
+              hearts / streak / mute / profile line up on a single baseline */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             
             {/* Hearts Counter */}
             <div 
@@ -116,14 +117,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
                   soundEngine.playTap();
                   if (currentUser.hearts === 0) setShowCooldownModal(true);
                 }}
-                className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-2.5 py-1.5 rounded-xl transition-colors"
+                className="h-9 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-2.5 rounded-xl transition-colors whitespace-nowrap"
               >
-                <Heart className={`w-3.5 h-3.5 ${currentUser.hearts > 0 ? 'text-rose-500 fill-rose-500' : 'text-zinc-600'}`} />
-                <span className="font-stats font-bold text-xs text-rose-300">
+                <Heart className={`w-3.5 h-3.5 shrink-0 ${currentUser.hearts > 0 ? 'text-rose-500 fill-rose-500' : 'text-zinc-600'}`} />
+                <span className="font-stats font-bold text-xs text-rose-300 leading-none">
                   {currentUser.hearts}/5
                 </span>
                 {cooldownRemainingSecs > 0 && (
-                  <span className="hidden sm:inline-block text-[10px] font-stats text-zinc-400 ml-1">
+                  <span className="hidden sm:inline-block text-[10px] font-stats text-zinc-400 ml-1 leading-none">
                     ({formatTimer(cooldownRemainingSecs)})
                   </span>
                 )}
@@ -153,11 +154,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             {/* Streak Flame — clickable → opens StreakCalendar */}
             <button
               onClick={() => { soundEngine.playTap(); setShowStreakCalendar(true); }}
-              className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 px-2.5 py-1.5 rounded-xl transition-colors group"
+              className="h-9 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 px-2.5 rounded-xl transition-colors group whitespace-nowrap"
               title="View streak history"
             >
-              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
-              <span className="font-stats font-bold text-xs text-amber-300">
+              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="font-stats font-bold text-xs text-amber-300 leading-none">
                 {currentUser.streak}d
               </span>
             </button>
@@ -165,27 +166,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             {/* Mute Toggle */}
             <button
               onClick={() => { soundEngine.playTap(); toggleMute(); }}
-              className="p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
+              className="h-9 w-9 flex items-center justify-center shrink-0 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors"
               title={isMuted ? 'Unmute' : 'Mute sounds'}
             >
               {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
             </button>
 
-            {/* Profile Avatar */}
+            {/* Profile Avatar — fixed height matches sibling pills; name/points
+                are truncated with nowrap so long names never wrap or overflow */}
             <button
               onClick={() => { soundEngine.playTap(); onOpenProfile(); }}
-              className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 p-1 sm:px-2.5 sm:py-1.5 rounded-xl transition-all group"
+              className="h-9 flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 pl-1 pr-1 sm:pr-3 rounded-xl transition-all group max-w-[160px] md:max-w-[220px]"
             >
               <img 
                 src={currentUser.avatar} 
                 alt={currentUser.name} 
-                className="w-6 h-6 rounded-lg bg-zinc-800"
+                className="w-7 h-7 rounded-lg bg-zinc-800 shrink-0 object-cover"
               />
-              <div className="text-left hidden md:block">
-                <div className="text-xs font-display font-bold text-white group-hover:text-aws-orange transition-colors">
+              <div className="text-left hidden md:flex md:flex-col md:justify-center min-w-0 leading-tight">
+                <div className="text-xs font-display font-bold text-white group-hover:text-aws-orange transition-colors truncate whitespace-nowrap">
                   {currentUser.name}
                 </div>
-                <div className="text-[10px] text-aws-orange font-stats font-bold">
+                <div className="text-[10px] text-aws-orange font-stats font-bold truncate whitespace-nowrap">
                   {currentUser.points} PTS · {currentUser.floors}F
                 </div>
               </div>
@@ -222,3 +224,5 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
     </>
   );
 };
+
+

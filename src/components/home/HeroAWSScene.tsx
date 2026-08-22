@@ -24,25 +24,28 @@ interface AwsServiceIconProps {
 const AwsServiceIcon: React.FC<AwsServiceIconProps> = ({ label, color, x, y, delay, size }) => {
   return (
     <div
-      className="absolute animate-float"
+      className="absolute animate-float group/icon"
       style={{
         left: `${x}%`,
         top: `${y}%`,
         animationDelay: `${delay}s`,
         animationDuration: `${4 + delay * 0.5}s`,
+        transformStyle: 'preserve-3d',
+        perspective: '400px',
       }}
     >
       <div
-        className="rounded-xl flex items-center justify-center font-stats font-bold select-none"
+        className="rounded-xl flex items-center justify-center font-stats font-bold select-none transition-transform duration-500"
         style={{
           width: size,
           height: size,
-          background: `${color}12`,
-          border: `1px solid ${color}30`,
+          background: `linear-gradient(145deg, ${color}1c, ${color}08)`,
+          border: `1px solid ${color}35`,
           color,
           fontSize: size > 44 ? 13 : 11,
-          boxShadow: `0 0 ${size * 0.4}px ${color}20`,
+          boxShadow: `0 0 ${size * 0.4}px ${color}22, inset 0 1px 0 ${color}20`,
           backdropFilter: 'blur(8px)',
+          transform: 'rotateX(8deg) rotateY(-8deg)',
         }}
       >
         {label}

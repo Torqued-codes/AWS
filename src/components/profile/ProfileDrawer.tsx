@@ -9,12 +9,22 @@ import {
   Save,
   Globe,
   Lock,
-  ChevronDown
+  ChevronDown,
+  Shuffle,
+  Hash,
+  LogOut
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
-import { Department } from '../../types';
+import { Department, Gender } from '../../types';
 
 const DEPARTMENTS: Department[] = ['CSE', 'IT', 'AI & Data Science', 'ECE', 'Cyber Security', 'CS-BS'];
+const GENDERS: Gender[] = ['Male', 'Female', 'Other'];
+const AVATAR_STYLES = ['bottts', 'adventurer', 'shapes', 'identicon', 'thumbs', 'rings'];
+const ROLL_PATTERN = /^[0-9]{2}[A-Za-z]{2,6}[0-9]{4,8}$/;
+
+function generateAvatarUrl(seed: string, style: string): string {
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed || 'cadet')}`;
+}
 
 interface ProfileDrawerProps {
   isOpen: boolean;
@@ -27,25 +37,40 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   onClose,
   onOpenCertificate
 }) => {
-  const { currentUser, badges, submissions, updateUserProfile } = useGame();
+  const { currentUser, badges, submissions, updateUserProfile, logoutUser } = useGame();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser.name);
+  const [editRoll, setEditRoll] = useState(currentUser.rollNumber);
+  const [editGender, setEditGender] = useState<Gender>(currentUser.gender || 'Other');
   const [editDept, setEditDept] = useState<Department>(currentUser.department);
   const [editYear, setEditYear] = useState<1|2|3|4>(currentUser.year);
   const [editPublic, setEditPublic] = useState<boolean>(currentUser.isPublic ?? true);
+  const [editAvatar, setEditAvatar] = useState(currentUser.avatar);
+  const [editBio, setEditBio] = useState(currentUser.bio || '');
+  const [rollError, setRollError] = useState('');
 
   const totalAnswered = submissions.length;
   const correctCount = submissions.filter(s => s.isCorrect).length;
   const accuracy = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 100;
 
   const handleSave = () => {
+    const trimmedRoll = editRoll.trim().toUpperCase();
+    if (!ROLL_PATTERN.test(trimmedRoll)) {
+      setRollError('Invalid format. Example: 24ETCS000001');
+      return;
+    }
+    setRollError('');
     soundEngine.playTap();
     updateUserProfile({
       name: editName.trim() || currentUser.name,
+      rollNumber: trimmedRoll,
+      gender: editGender,
       department: editDept,
       year: editYear,
       isPublic: editPublic,
+      avatar: editAvatar,
+      bio: editBio.trim().slice(0, 160),
     });
     setIsEditing(false);
   };
@@ -53,10 +78,22 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const handleEdit = () => {
     soundEngine.playTap();
     setEditName(currentUser.name);
+    setEditRoll(currentUser.rollNumber);
+    setEditGender(currentUser.gender || 'Other');
     setEditDept(currentUser.department);
     setEditYear(currentUser.year);
     setEditPublic(currentUser.isPublic ?? true);
+    setEditAvatar(currentUser.avatar);
+    setEditBio(currentUser.bio || '');
+    setRollError('');
     setIsEditing(true);
+  };
+
+  const handleShuffleAvatar = () => {
+    soundEngine.playTap();
+    const style = AVATAR_STYLES[Math.floor(Math.random() * AVATAR_STYLES.length)];
+    const seed = `${editName || currentUser.name}${Math.floor(Math.random() * 10000)}`;
+    setEditAvatar(generateAvatarUrl(seed, style));
   };
 
   if (!isOpen) return null;
@@ -107,11 +144,23 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
             {/* Avatar Card */}
             <div className="flex items-center gap-3.5 bg-zinc-900 border border-zinc-800 p-4 rounded-2xl mb-5">
-              <img 
-                src={currentUser.avatar} 
-                alt={currentUser.name} 
-                className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 p-1"
-              />
+              <div className="relative shrink-0">
+                <img 
+                  src={isEditing ? editAvatar : currentUser.avatar} 
+                  alt={currentUser.name} 
+                  className="w-14 h-14 rounded-2xl bg-zinc-800 border border-zinc-700 p-1"
+                />
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleShuffleAvatar}
+                    title="Shuffle avatar icon"
+                    className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-aws-orange text-zinc-950 flex items-center justify-center border-2 border-zinc-900 hover:bg-amber-500 transition-colors"
+                  >
+                    <Shuffle className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 {isEditing ? (
                   <input
@@ -126,9 +175,28 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                     {currentUser.name}
                   </div>
                 )}
-                <div className="text-xs text-cyan-400 font-mono mt-0.5">
-                  {currentUser.rollNumber}
-                </div>
+
+                {isEditing ? (
+                  <div>
+                    <div className="relative mt-1">
+                      <Hash className="w-3 h-3 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={editRoll}
+                        onChange={e => setEditRoll(e.target.value)}
+                        placeholder="24ETCS000001"
+                        className="w-full bg-zinc-800 border border-zinc-700 focus:border-aws-orange/60 rounded-lg pl-7 pr-2.5 py-1.5 text-xs font-stats uppercase text-cyan-300 outline-none"
+                      />
+                    </div>
+                    {rollError && (
+                      <p className="text-[10px] text-rose-400 font-mono mt-1">{rollError}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs text-cyan-400 font-mono mt-0.5">
+                    {currentUser.rollNumber}
+                  </div>
+                )}
 
                 {/* Public / Private toggle */}
                 <div className="flex items-center gap-2 mt-2">
@@ -161,40 +229,79 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
             {/* Editable fields when editing */}
             {isEditing && (
-              <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="space-y-3 mb-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-mono text-zinc-500 mb-1 uppercase tracking-wider">Department</label>
+                    <div className="relative">
+                      <select
+                        value={editDept}
+                        onChange={e => setEditDept(e.target.value as Department)}
+                        className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl px-3 py-2 text-xs text-white outline-none appearance-none"
+                      >
+                        {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono text-zinc-500 mb-1 uppercase tracking-wider">Year</label>
+                    <div className="relative">
+                      <select
+                        value={editYear}
+                        onChange={e => setEditYear(Number(e.target.value) as 1|2|3|4)}
+                        className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl px-3 py-2 text-xs text-white outline-none appearance-none font-stats"
+                      >
+                        {[1,2,3,4].map(y => <option key={y} value={y}>Year {y}</option>)}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-[10px] font-mono text-zinc-500 mb-1 uppercase tracking-wider">Department</label>
+                  <label className="block text-[10px] font-mono text-zinc-500 mb-1 uppercase tracking-wider">Gender</label>
                   <div className="relative">
                     <select
-                      value={editDept}
-                      onChange={e => setEditDept(e.target.value as Department)}
+                      value={editGender}
+                      onChange={e => setEditGender(e.target.value as Gender)}
                       className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl px-3 py-2 text-xs text-white outline-none appearance-none"
                     >
-                      {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      {GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                     <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-mono text-zinc-500 mb-1 uppercase tracking-wider">Year</label>
-                  <div className="relative">
-                    <select
-                      value={editYear}
-                      onChange={e => setEditYear(Number(e.target.value) as 1|2|3|4)}
-                      className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl px-3 py-2 text-xs text-white outline-none appearance-none font-stats"
-                    >
-                      {[1,2,3,4].map(y => <option key={y} value={y}>Year {y}</option>)}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
+                  <label className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1 uppercase tracking-wider">
+                    <span>Bio</span>
+                    <span className="text-zinc-600 normal-case">{editBio.length}/160</span>
+                  </label>
+                  <textarea
+                    value={editBio}
+                    onChange={e => setEditBio(e.target.value.slice(0, 160))}
+                    placeholder="A short line about yourself — what you're learning, your goals, etc."
+                    rows={3}
+                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-aws-orange/60 rounded-xl px-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 outline-none resize-none font-sans"
+                  />
                 </div>
               </div>
             )}
 
-            {/* Non-edit: dept/year info */}
+            {/* Non-edit: bio */}
+            {!isEditing && currentUser.bio && (
+              <p className="text-xs text-zinc-400 font-sans italic mb-5 leading-relaxed">
+                “{currentUser.bio}”
+              </p>
+            )}
+
+            {/* Non-edit: dept/year/gender info */}
             {!isEditing && (
               <div className="text-xs text-zinc-400 font-mono mb-5">
-                {currentUser.department} · Year {currentUser.year} · Joined Week {currentUser.joinedWeek || 1}
+                {currentUser.department} · Year {currentUser.year}
+                {currentUser.gender && <> · {currentUser.gender}</>}
+                {' '}· Joined Week {currentUser.joinedWeek || 1}
               </div>
             )}
 
@@ -249,7 +356,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
           </div>
 
           {/* Action */}
-          <div className="pt-4 border-t border-zinc-800">
+          <div className="pt-4 border-t border-zinc-800 space-y-2">
             <button
               onClick={() => {
                 soundEngine.playTap();
@@ -261,6 +368,14 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
               <Award className="w-4 h-4" />
               <span>View & Download Certificate</span>
             </button>
+
+            <button
+              onClick={() => { soundEngine.playTap(); logoutUser(); }}
+              className="w-full py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-rose-400 font-mono text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
           </div>
 
         </div>
@@ -268,3 +383,7 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
     </div>
   );
 };
+
+
+
+

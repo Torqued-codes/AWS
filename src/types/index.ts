@@ -52,6 +52,7 @@ export interface Student {
   registeredAt?: number; // Timestamp of registration
   activityLog?: number[]; // Array of timestamps for activity heat-map
   activeDays?: number; // Consecutive days participated (5D streak)
+  bio?: string; // Short user bio, editable from profile drawer
 }
 
 export interface QuestionOption {
