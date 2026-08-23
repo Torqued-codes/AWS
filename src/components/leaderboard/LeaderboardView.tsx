@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Student, Department } from '../../types';
+import { Student, Department, DEPARTMENTS } from '../../types';
 import { Podium } from './Podium';
 import { 
   Trophy, 
@@ -124,11 +124,9 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-mono rounded-xl px-4 py-2 focus:outline-none focus:border-aws-orange"
         >
           <option value="ALL">All Departments</option>
-          <option value="CSE">CSE</option>
-          <option value="IT">IT</option>
-          <option value="AI & Data Science">AI & Data Science</option>
-          <option value="ECE">ECE</option>
-          <option value="Cyber Security">Cyber Security</option>
+          {DEPARTMENTS.map(d => (
+            <option key={d} value={d}>{d}</option>
+          ))}
         </select>
       </div>
 

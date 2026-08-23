@@ -1,10 +1,23 @@
 export type Department = 
   | 'CSE' 
-  | 'IT' 
-  | 'AI & Data Science' 
+  | 'ISE' 
+  | 'AIML' 
+  | 'MC' 
+  | 'EEE' 
   | 'ECE' 
-  | 'Cyber Security' 
-  | 'CS-BS';
+  | 'MECH' 
+  | 'AUTO' 
+  | 'CIVIL' 
+  | 'AERO' 
+  | 'OTHERS';
+
+// Single source of truth for the branch/department dropdown, used across
+// registration/login, the profile edit drawer, the leaderboard filter,
+// and the 3D City district selectors — so every form always offers the
+// exact same standardized list.
+export const DEPARTMENTS: Department[] = [
+  'CSE', 'ISE', 'AIML', 'MC', 'EEE', 'ECE', 'MECH', 'AUTO', 'CIVIL', 'AERO', 'OTHERS'
+];
 
 export type Gender = 'Male' | 'Female' | 'Other';
 
@@ -53,6 +66,7 @@ export interface Student {
   activityLog?: number[]; // Array of timestamps for activity heat-map
   activeDays?: number; // Consecutive days participated (5D streak)
   bio?: string; // Short user bio, editable from profile drawer
+  lightsOn?: boolean; // Building lights toggle (undefined = on by default)
 }
 
 export interface QuestionOption {

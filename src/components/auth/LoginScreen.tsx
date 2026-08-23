@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Cloud, ArrowRight, Eye, EyeOff, AlertCircle, User, Hash, GraduationCap, ChevronDown, KeyRound } from 'lucide-react';
-import { Department, Gender, Student } from '../../types';
+import { Department, Gender, Student, DEPARTMENTS } from '../../types';
 import { CURRENT_DEFAULT_USER } from '../../data/mockData';
 
 interface LoginScreenProps {
   onLogin: (user: Student) => void;
 }
 
-const DEPARTMENTS: Department[] = ['CSE', 'IT', 'AI & Data Science', 'ECE', 'Cyber Security', 'CS-BS'];
 const ROLL_PATTERN = /^[0-9]{2}[A-Za-z]{2,6}[0-9]{4,8}$/;
 
 function generateAvatar(name: string): string {
@@ -77,7 +76,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       lastHeartLossTime: null,
       unlockedBadges: [],
       buildingTier: 'shack',
-      floors: 1,
+      // Strict floor rule: floors = floor(points/50). A brand-new account
+      // has 0 points, so it starts at 0 floors — rendered as an empty
+      // foundation-only plot in the 3D city until the first 50 points
+      // are earned.
+      floors: 0,
       accentColor: '#FF9900',
       avatar: generateAvatar(name.trim()),
       isPublic: true,
@@ -374,6 +377,3 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     </div>
   );
 };
-
-
-

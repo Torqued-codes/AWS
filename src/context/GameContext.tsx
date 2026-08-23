@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Student, Question, UserSubmission, Announcement, Badge, BuildingTier } from '../types';
 import { 
   INITIAL_QUESTIONS, 
@@ -53,6 +53,7 @@ interface GameContextType {
   removeStudent: (studentId: string) => void;
   updateUserProfile: (updates: Partial<Student>) => void;
   trackActiveDay: () => void;
+  toggleBuildingLights: () => void;
   isCertEligible: (studentId: string) => boolean;
 }
 
@@ -66,7 +67,11 @@ function calculateTier(points: number): BuildingTier {
 }
 
 function calculateFloors(points: number): number {
-  return Math.max(1, Math.floor(points / 50) + 1);
+  // Strict rule: floors = floor(score / 50). A brand-new account with
+  // 0–49 points has ZERO floors (an empty foundation-only plot in the
+  // 3D city) — the first floor is only granted upon reaching 50
+  // cumulative points. No artificial "+1 free floor" baseline.
+  return Math.max(0, Math.floor(points / 50));
 }
 
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -258,6 +263,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
+  // Toggles the current user's OWN building lights on/off in the 3D City.
+  // Only ever mutates `currentUser` — there is no path for a student to
+  // flip anyone else's building lights. `lightsOn` defaults to true when
+  // undefined, so existing/mock students remain lit exactly as before.
+  const toggleBuildingLights = useCallback(() => {
+    soundEngine.playTap();
+    setCurrentUser(prev => ({
+      ...prev,
+      lightsOn: prev.lightsOn === false ? true : false,
+    }));
+  }, []);
+
   const submitAnswer = useCallback((questionId: string, selectedOption: 'A' | 'B' | 'C' | 'D'): boolean => {
     const question = questions.find(q => q.id === questionId);
     if (!question) return false;
@@ -386,19 +403,33 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAnnouncements(prev => [newAnn, ...prev]);
   };
 
-  // Combine currentUser with studentList for rankings & 3D city
-  const allStudents: Student[] = [
-    currentUser,
-    ...studentList.filter(s => s.id !== currentUser.id)
-  ].sort((a, b) => b.points - a.points);
+  // Combine currentUser with studentList for rankings & 3D city.
+  //
+  // IMPORTANT: this MUST be memoized. Previously it was a plain array
+  // literal recomputed on every GameProvider render — including renders
+  // triggered by totally unrelated state like `selectedStudentModal`
+  // (set every time a building is clicked in the 3D City). Because
+  // ThreeCityCanvas's WebGL setup effect depends on `students` by
+  // reference, a fresh array on every click caused the entire Three.js
+  // scene (renderer, camera, controls, lights, event listeners, render
+  // loop) to be torn down and rebuilt on every single click — visible
+  // as the camera "snapping"/resetting in a loop instead of smoothly
+  // flying to the clicked building. Memoizing keeps the reference
+  // stable unless `currentUser` or `studentList` actually change.
+  const allStudents: Student[] = useMemo(() => (
+    [
+      currentUser,
+      ...studentList.filter(s => s.id !== currentUser.id)
+    ].sort((a, b) => b.points - a.points)
+  ), [currentUser, studentList]);
 
   // Weekly / monthly (all-time) rankings, used to gate certificate access
   // to only the current top-5 performers. "Monthly" reuses the same
   // all-time point totals as `allStudents` since that's the full-history
   // metric; weekly uses each student's rolling weeklyPoints.
-  const weeklyRanked = [...allStudents].sort(
-    (a, b) => (b.weeklyPoints || b.points) - (a.weeklyPoints || a.points)
-  );
+  const weeklyRanked = useMemo(() => (
+    [...allStudents].sort((a, b) => (b.weeklyPoints || b.points) - (a.weeklyPoints || a.points))
+  ), [allStudents]);
   const monthlyRanked = allStudents; // already sorted by all-time points
 
   // A student may only generate/download a certificate for themselves,
@@ -448,6 +479,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         removeStudent,
         updateUserProfile,
         trackActiveDay,
+        toggleBuildingLights,
         isCertEligible,
       }}
     >

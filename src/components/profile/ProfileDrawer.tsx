@@ -15,10 +15,9 @@ import {
   LogOut
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
-import { Department, Gender } from '../../types';
+import { Department, Gender, DEPARTMENTS } from '../../types';
 import { isTopFive } from '../../utils/ranking';
 
-const DEPARTMENTS: Department[] = ['CSE', 'IT', 'AI & Data Science', 'ECE', 'Cyber Security', 'CS-BS'];
 const GENDERS: Gender[] = ['Male', 'Female', 'Other'];
 const AVATAR_STYLES = ['bottts', 'adventurer', 'shapes', 'identicon', 'thumbs', 'rings'];
 const ROLL_PATTERN = /^[0-9]{2}[A-Za-z]{2,6}[0-9]{4,8}$/;

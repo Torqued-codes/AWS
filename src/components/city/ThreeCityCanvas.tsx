@@ -23,9 +23,10 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
   navEvent,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { currentUser } = useGame();
+  const { currentUser, toggleBuildingLights } = useGame();
 
   const [hoveredStudent, setHoveredStudent] = useState<Student | null>(null);
+  const [hoveredLightSwitch, setHoveredLightSwitch] = useState(false);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [teleportFeedback, setTeleportFeedback] = useState<{ x: number; z: number } | null>(null);
 
@@ -42,6 +43,18 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
   // Camera animation targets
   const cameraTargetPos = useRef<THREE.Vector3 | null>(null);
   const controlsTargetPos = useRef<THREE.Vector3 | null>(null);
+
+  // Persists the camera's position/orbit-target ACROSS scene rebuilds.
+  // The main effect below rebuilds the entire Three.js scene whenever
+  // `students` changes by reference — which includes harmless updates
+  // like toggling your building's lights (that flips `currentUser`,
+  // which recomputes the memoized `allStudents` array in GameContext).
+  // Without this, every such rebuild re-created the camera at its
+  // hardcoded startup position, making the view visibly "jump/reset"
+  // on every click. Null only on the very first mount, so the initial
+  // load still uses the intended default framing.
+  const savedCameraPos = useRef<THREE.Vector3 | null>(null);
+  const savedControlsTarget = useRef<THREE.Vector3 | null>(null);
 
   // Build Procedural Window Texture
   const createWindowTexture = (tier: string, isCurrent: boolean, isBright: boolean) => {
@@ -143,11 +156,22 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       bright: 0xe2e8f0
     };
     scene.background = new THREE.Color(bgColors[skyTheme]);
-    scene.fog = new THREE.FogExp2(bgColors[skyTheme], isBright ? 0.0025 : skyTheme === 'sunset' ? 0.0022 : 0.0035);
+    // Fog density halved from the previous preset so the outer rings of
+    // the expanded 20x20-plot city remain visible instead of fading into
+    // haze well before the edge of the skyline.
+    scene.fog = new THREE.FogExp2(bgColors[skyTheme], isBright ? 0.0013 : skyTheme === 'sunset' ? 0.0011 : 0.0017);
 
-    // 2. Camera
+    // 2. Camera — far plane and starting position pulled back to frame
+    // the expanded ~730-unit-wide, 400-plot metropolis on load. On any
+    // rebuild after the first (e.g. toggling your building lights),
+    // restore wherever the camera was instead of resetting to this
+    // default — see `savedCameraPos` comment above.
     const camera = new THREE.PerspectiveCamera(45, width / height, 1, 2000);
-    camera.position.set(130, 110, 150);
+    if (savedCameraPos.current) {
+      camera.position.copy(savedCameraPos.current);
+    } else {
+      camera.position.set(240, 200, 280);
+    }
     cameraRef.current = camera;
 
     // 3. Renderer
@@ -167,8 +191,14 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
     controls.minDistance = 15;
-    controls.maxDistance = 500;
-    controls.target.set(0, 8, 0);
+    // Raised from 500 → 950 so the full expanded 20x20-plot skyline can
+    // be zoomed all the way out to and still fit in frame.
+    controls.maxDistance = 950;
+    if (savedControlsTarget.current) {
+      controls.target.copy(savedControlsTarget.current);
+    } else {
+      controls.target.set(0, 8, 0);
+    }
     controlsRef.current = controls;
 
     // 5. Lighting
@@ -184,8 +214,10 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 10;
-    dirLight.shadow.camera.far = 500;
-    const d = 160;
+    // Widened to match the expanded ~730-unit city footprint so shadows
+    // still render correctly across the outer blocks.
+    dirLight.shadow.camera.far = 1100;
+    const d = 400;
     dirLight.shadow.camera.left = -d;
     dirLight.shadow.camera.right = d;
     dirLight.shadow.camera.top = d;
@@ -211,8 +243,10 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     scene.add(spotLight);
     spotlightRef.current = spotLight;
 
-    // 6. Ground & City Blocks
-    const citySize = 320;
+    // 6. Ground & City Blocks — sized to the expanded 10x10 block grid
+    // (~730 units across) so the ground never runs out under the
+    // outermost towers.
+    const citySize = 740;
     const groundGeo = new THREE.PlaneGeometry(citySize * 1.6, citySize * 1.6);
     const groundMat = new THREE.MeshStandardMaterial({ 
       color: isBright ? 0xcbd5e1 : skyTheme === 'sunset' ? 0x1c1420 : 0x090c14, 
@@ -237,20 +271,23 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     scene.add(markerMesh);
     teleportMarkerRef.current = markerMesh;
 
-    // Grid Lines
+    // Grid Lines — division count raised to match the larger footprint
     const gridHelper = new THREE.GridHelper(
       citySize, 
-      32, 
+      60, 
       isBright ? 0x94a3b8 : 0xff9900, 
       isBright ? 0xd1d5db : 0x1a2333
     );
     gridHelper.position.y = 0.1;
     scene.add(gridHelper);
 
-    // 7. Blocks and Roads
+    // 7. Blocks and Roads — expanded to a 10x10 block grid (each block
+    // holds a 2x2 sub-arrangement of plots), giving an effective 20x20
+    // plot matrix and 400 total buildable plots — comfortably above the
+    // 300-tower capacity target.
     const blockSize = 60;
     const roadWidth = 14;
-    const gridDim = 4;
+    const gridDim = 10;
     const startOffset = -((gridDim * (blockSize + roadWidth) - roadWidth) / 2) + blockSize / 2;
 
     const sidewalkMat = new THREE.MeshStandardMaterial({ 
@@ -292,7 +329,36 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     }
 
     // 8. Place Student Buildings
+    //
+    // Performance note: with the grid expanded to support 300+ towers,
+    // per-building `new THREE.BoxGeometry(...)` and per-building canvas
+    // texture generation (createWindowTexture draws to a <canvas> every
+    // call) would mean hundreds of unique geometries and hundreds of
+    // expensive canvas rasterizations on every scene rebuild. Both are
+    // avoided below:
+    //  - `unitBoxGeo` is created ONCE and every building's tower/roof/
+    //    base meshes reuse it via `.scale.set(...)` instead of each
+    //    allocating their own BoxGeometry.
+    //  - Window textures are cached by their (tier, isCurrent, isBright)
+    //    key — there are only a handful of distinct combinations no
+    //    matter how many students exist — and reused via `.clone()`
+    //    (a cheap operation that shares the underlying canvas image but
+    //    keeps each building's `.repeat` independent for its floor count).
     buildingMeshesRef.current.clear();
+
+    const unitBoxGeo = new THREE.BoxGeometry(1, 1, 1);
+    const windowTextureCache = new Map<string, THREE.Texture>();
+    const getWindowTexture = (tier: string, isCurrent: boolean, isBrightTheme: boolean) => {
+      const key = `${tier}_${isCurrent}_${isBrightTheme}`;
+      let base = windowTextureCache.get(key);
+      if (!base) {
+        base = createWindowTexture(tier, isCurrent, isBrightTheme);
+        windowTextureCache.set(key, base);
+      }
+      const cloned = base.clone();
+      cloned.needsUpdate = true;
+      return cloned;
+    };
 
     students.forEach((student, index) => {
       const plot = plotPositions[index % plotPositions.length];
@@ -301,6 +367,9 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       const isCurrent = student.id === currentUser.id;
       const isApex = student.buildingTier === 'apex_monolith';
       const isCyber = student.buildingTier === 'cyber_tower';
+      // Defaults to ON so existing/mock students light up exactly as
+      // before. Only the profile owner can ever flip their own flag.
+      const buildingLightsOn = student.lightsOn !== false;
 
       const buildingHeight = Math.max(8, student.floors * 3.2 + 4);
       const buildingWidth = isApex ? 13 : isCyber ? 11 : 9.5;
@@ -308,29 +377,37 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       const buildingGroup = new THREE.Group();
       buildingGroup.position.set(plot.x, 0.8, plot.z);
 
-      const towerGeo = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingWidth);
-      const windowTexture = createWindowTexture(student.buildingTier, isCurrent, isBright);
+      const windowTexture = getWindowTexture(student.buildingTier, isCurrent, isBright);
       windowTexture.repeat.set(1, Math.max(1, Math.floor(student.floors / 2)));
 
       const towerMat = new THREE.MeshStandardMaterial({
         map: windowTexture,
         roughness: 0.4,
         metalness: isBright ? 0.2 : 0.6,
-        color: isBright ? 0xffffff : isCurrent ? 0xffffff : 0xdddddd
+        color: isBright ? 0xffffff : isCurrent ? 0xffffff : 0xdddddd,
+        // Reuses the same window texture as an emissive map — the lit
+        // (bright-colored) window pixels glow in the dark, the unlit
+        // (near-black) pixels stay non-emissive. This makes towers
+        // visible at night without the cost of per-building point
+        // lights, and turns fully off when `lightsOn` is false.
+        emissiveMap: windowTexture,
+        emissive: new THREE.Color(0xffffff),
+        emissiveIntensity: buildingLightsOn ? (isBright ? 0.15 : 0.85) : 0,
       });
 
-      const towerMesh = new THREE.Mesh(towerGeo, towerMat);
+      const towerMesh = new THREE.Mesh(unitBoxGeo, towerMat);
+      towerMesh.scale.set(buildingWidth, buildingHeight, buildingWidth);
       towerMesh.position.y = buildingHeight / 2;
       towerMesh.castShadow = true;
       towerMesh.receiveShadow = true;
       towerMesh.userData = { student };
       buildingGroup.add(towerMesh);
 
-      const roofEdgeGeo = new THREE.BoxGeometry(buildingWidth + 0.6, 0.6, buildingWidth + 0.6);
       const roofEdgeMat = new THREE.MeshBasicMaterial({
         color: isCurrent ? 0xff9900 : isApex ? 0xf59e0b : isCyber ? 0x06b6d4 : 0x10b981
       });
-      const roofEdgeMesh = new THREE.Mesh(roofEdgeGeo, roofEdgeMat);
+      const roofEdgeMesh = new THREE.Mesh(unitBoxGeo, roofEdgeMat);
+      roofEdgeMesh.scale.set(buildingWidth + 0.6, 0.6, buildingWidth + 0.6);
       roofEdgeMesh.position.y = buildingHeight + 0.3;
       buildingGroup.add(roofEdgeMesh);
 
@@ -354,15 +431,96 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
         buildingGroup.add(dish);
       }
 
-      const baseGeo = new THREE.BoxGeometry(buildingWidth + 1.2, 1.2, buildingWidth + 1.2);
       const baseMat = new THREE.MeshStandardMaterial({ color: isBright ? 0x94a3b8 : 0x1a2233, roughness: 0.9 });
-      const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+      const baseMesh = new THREE.Mesh(unitBoxGeo, baseMat);
+      baseMesh.scale.set(buildingWidth + 1.2, 1.2, buildingWidth + 1.2);
       baseMesh.position.y = 0.6;
       buildingGroup.add(baseMesh);
+
+      // Light switch — a small lamp-post object, rendered ONLY on the
+      // logged-in user's own building. Clicking it toggles that user's
+      // `lightsOn` flag; there is no equivalent control on anyone else's
+      // tower, so peers can never touch another student's lights.
+      if (isCurrent) {
+        const switchGroup = new THREE.Group();
+        switchGroup.position.set(buildingWidth / 2 + 3.5, 0, 0);
+
+        const postGeo = new THREE.CylinderGeometry(0.25, 0.3, 3.2, 8);
+        const postMat = new THREE.MeshStandardMaterial({ color: 0x2a2f3a, roughness: 0.6, metalness: 0.4 });
+        const post = new THREE.Mesh(postGeo, postMat);
+        post.position.y = 1.6;
+        switchGroup.add(post);
+
+        const bulbGeo = new THREE.SphereGeometry(0.7, 12, 12);
+        const bulbMat = new THREE.MeshStandardMaterial({
+          color: buildingLightsOn ? 0xffc978 : 0x3a3f4a,
+          emissive: buildingLightsOn ? 0xffb84d : 0x000000,
+          emissiveIntensity: buildingLightsOn ? 1.2 : 0,
+          roughness: 0.3,
+        });
+        const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+        bulb.position.y = 3.4;
+        bulb.userData = { isLightSwitch: true, studentId: student.id };
+        switchGroup.add(bulb);
+
+        // Wider invisible hit-target so the switch is easy to click
+        // without needing pixel-perfect precision on the small bulb.
+        const hitGeo = new THREE.SphereGeometry(1.6, 8, 8);
+        const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+        const hitTarget = new THREE.Mesh(hitGeo, hitMat);
+        hitTarget.position.y = 3.4;
+        hitTarget.userData = { isLightSwitch: true, studentId: student.id };
+        switchGroup.add(hitTarget);
+
+        buildingGroup.add(switchGroup);
+      }
 
       scene.add(buildingGroup);
       buildingMeshesRef.current.set(student.id, buildingGroup);
     });
+
+    // ── Ambient AWS "cloud" background models, floating high above the
+    // skyline. Purely decorative — reinforces the same amber/gold theme
+    // as the Hero and lower Overview sections, with high-visibility
+    // emissive material so it reads clearly against the dark sky without
+    // ever obscuring buildings or the HUD. ──────────────────────────────
+    const cloudGeos = [
+      new THREE.IcosahedronGeometry(6, 1),
+      new THREE.OctahedronGeometry(5, 0),
+      new THREE.TorusGeometry(4, 1.2, 8, 16),
+    ];
+    const ambientCloudGroup = new THREE.Group();
+    const ambientClouds: THREE.Mesh[] = [];
+    const cloudCount = 14;
+    for (let i = 0; i < cloudCount; i++) {
+      const geo = cloudGeos[i % cloudGeos.length];
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.35,
+        roughness: 0.3,
+        metalness: 0.4,
+        wireframe: Math.random() > 0.5,
+        transparent: true,
+        opacity: 0.55,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      const angle = (i / cloudCount) * Math.PI * 2;
+      const radius = 260 + Math.random() * 240;
+      mesh.position.set(
+        Math.cos(angle) * radius,
+        130 + Math.random() * 90,
+        Math.sin(angle) * radius
+      );
+      mesh.scale.setScalar(0.9 + Math.random() * 1.6);
+      mesh.userData.bobSpeed = 0.15 + Math.random() * 0.25;
+      mesh.userData.bobOffset = Math.random() * Math.PI * 2;
+      mesh.userData.rotSpeed = 0.04 + Math.random() * 0.08;
+      mesh.userData.basePos = mesh.position.clone();
+      ambientClouds.push(mesh);
+      ambientCloudGroup.add(mesh);
+    }
+    scene.add(ambientCloudGroup);
 
     // 9. Raycasting: Click to Teleport & Hover
     const raycaster = new THREE.Raycaster();
@@ -377,19 +535,31 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       const intersects = raycaster.intersectObjects(scene.children, true);
 
       let foundStudent: Student | null = null;
+      let foundLightSwitch = false;
       for (const hit of intersects) {
+        if (hit.object.userData && hit.object.userData.isLightSwitch) {
+          foundLightSwitch = true;
+          break;
+        }
         if (hit.object.userData && hit.object.userData.student) {
           foundStudent = hit.object.userData.student as Student;
           break;
         }
       }
 
-      if (foundStudent) {
+      if (foundLightSwitch) {
+        setHoveredStudent(null);
+        setHoveredLightSwitch(true);
+        setTooltipPos({ x: e.clientX, y: e.clientY });
+        container.style.cursor = 'pointer';
+      } else if (foundStudent) {
         setHoveredStudent(foundStudent);
+        setHoveredLightSwitch(false);
         setTooltipPos({ x: e.clientX, y: e.clientY });
         container.style.cursor = 'pointer';
       } else {
         setHoveredStudent(null);
+        setHoveredLightSwitch(false);
         setTooltipPos(null);
         container.style.cursor = 'crosshair';
       }
@@ -404,6 +574,17 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       const intersects = raycaster.intersectObjects(scene.children, true);
 
       for (const hit of intersects) {
+        // Light-switch has priority over building selection. It only
+        // ever exists on the current user's own tower (see building
+        // creation above), so this can never toggle someone else's
+        // lights — there is no such object to click on peers' buildings.
+        if (hit.object.userData && hit.object.userData.isLightSwitch) {
+          if (hit.object.userData.studentId === currentUser.id) {
+            toggleBuildingLights();
+          }
+          return;
+        }
+
         // If clicked a building
         if (hit.object.userData && hit.object.userData.student) {
           const clickedStudent = hit.object.userData.student as Student;
@@ -427,14 +608,44 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
 
     // 10. Render Loop
     let animationFrameId: number;
+    const clock = new THREE.Clock();
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-      if (cameraTargetPos.current && cameraRef.current && controlsRef.current) {
-        cameraRef.current.position.lerp(cameraTargetPos.current, 0.05);
-        controlsRef.current.target.lerp(controlsTargetPos.current!, 0.05);
+      // Slow, smooth float/rotation for the ambient background cloud
+      // models — deliberately gentle so they read as atmosphere rather
+      // than a distraction while navigating the city.
+      ambientClouds.forEach((mesh) => {
+        const base = mesh.userData.basePos as THREE.Vector3;
+        mesh.position.y = base.y + Math.sin(t * mesh.userData.bobSpeed + mesh.userData.bobOffset) * 6;
+        mesh.rotation.x += mesh.userData.rotSpeed * 0.01;
+        mesh.rotation.y += mesh.userData.rotSpeed * 0.014;
+      });
+      ambientCloudGroup.rotation.y = Math.sin(t * 0.02) * 0.05;
 
-        if (cameraRef.current.position.distanceTo(cameraTargetPos.current) < 0.6) {
+      // Camera fly-to/teleport lerp. Both target refs are always set
+      // together (see flyToStudent/teleportToPoint), but we defensively
+      // guard against one being null to avoid a runtime throw inside the
+      // render loop — an uncaught error here would otherwise repeat on
+      // every subsequent frame (since the next rAF is already scheduled
+      // above), which is what a "camera lock / infinite loop" looks like
+      // to a user. Once the camera settles within a tight 0.01 radius of
+      // its static destination vector, both refs are cleared so the
+      // interpolation cleanly stops — it never re-triggers itself.
+      if (cameraRef.current && controlsRef.current) {
+        if (cameraTargetPos.current && controlsTargetPos.current) {
+          cameraRef.current.position.lerp(cameraTargetPos.current, 0.05);
+          controlsRef.current.target.lerp(controlsTargetPos.current, 0.05);
+
+          const settled = cameraRef.current.position.distanceTo(cameraTargetPos.current) < 0.01;
+          if (settled) {
+            cameraTargetPos.current = null;
+            controlsTargetPos.current = null;
+          }
+        } else {
+          // Mismatched state (one ref set, the other not) — clear both
+          // rather than risk lerping toward `null`.
           cameraTargetPos.current = null;
           controlsTargetPos.current = null;
         }
@@ -457,13 +668,31 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     window.addEventListener('resize', handleResize);
 
     return () => {
+      // Snapshot exactly where the camera is right now, so the NEXT
+      // scene build (if this effect fires again) restores this view
+      // instead of resetting to the default startup framing.
+      if (cameraRef.current && controlsRef.current) {
+        savedCameraPos.current = cameraRef.current.position.clone();
+        savedControlsTarget.current = controlsRef.current.target.clone();
+      }
+
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('mousemove', handlePointerMove);
       container.removeEventListener('click', handleClick);
       cancelAnimationFrame(animationFrameId);
+
+      // Dispose the resources shared across all 300+ buildings so
+      // rebuilding the scene (e.g. on theme switch) doesn't leak GPU
+      // memory: one shared box geometry + a handful of cached window
+      // textures, instead of hundreds of individual ones.
+      unitBoxGeo.dispose();
+      windowTextureCache.forEach((tex) => tex.dispose());
+      cloudGeos.forEach((g) => g.dispose());
+      ambientClouds.forEach((mesh) => (mesh.material as THREE.Material).dispose());
+
       renderer.dispose();
     };
-  }, [students, currentUser.id, skyTheme, onSelectStudent, flyToStudent, teleportToPoint]);
+  }, [students, currentUser.id, skyTheme, onSelectStudent, flyToStudent, teleportToPoint, toggleBuildingLights]);
 
   useEffect(() => {
     if (targetStudentId) {
@@ -554,6 +783,16 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
         </div>
       )}
 
+      {/* Light Switch Tooltip */}
+      {hoveredLightSwitch && tooltipPos && (
+        <div 
+          className="fixed pointer-events-none z-50 transform -translate-x-1/2 -translate-y-full mb-4 px-3 py-2 rounded-xl bg-zinc-950/95 border border-amber-500/40 shadow-2xl backdrop-blur-md text-xs text-white whitespace-nowrap"
+          style={{ left: `${tooltipPos.x}px`, top: `${tooltipPos.y - 12}px` }}
+        >
+          <span className="font-mono font-bold text-amber-300">💡 Toggle your building lights</span>
+        </div>
+      )}
+
       {/* 3D Hover Tooltip */}
       {hoveredStudent && tooltipPos && (
         <div 
@@ -580,10 +819,3 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     </div>
   );
 };
-
-
-
-
-
-
-

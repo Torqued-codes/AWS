@@ -49,10 +49,16 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
   const districts: Array<{ id: Department | 'ALL'; label: string }> = [
     { id: 'ALL', label: 'All Districts' },
     { id: 'CSE', label: 'CSE Sector' },
-    { id: 'IT', label: 'IT Cyberway' },
-    { id: 'AI & Data Science', label: 'AI/DS Valley' },
+    { id: 'ISE', label: 'ISE Cyberway' },
+    { id: 'AIML', label: 'AI/ML Valley' },
+    { id: 'MC', label: 'MC Nexus' },
+    { id: 'EEE', label: 'EEE Grid' },
     { id: 'ECE', label: 'ECE Subnet' },
-    { id: 'Cyber Security', label: 'Cyber Defense' },
+    { id: 'MECH', label: 'MECH Works' },
+    { id: 'AUTO', label: 'AUTO Yard' },
+    { id: 'CIVIL', label: 'CIVIL Grounds' },
+    { id: 'AERO', label: 'AERO Bay' },
+    { id: 'OTHERS', label: 'Other Districts' },
   ];
 
   const handleNav = (dir: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout') => {

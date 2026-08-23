@@ -16,10 +16,16 @@ export const DistrictTabs: React.FC<DistrictTabsProps> = ({
   const districts: Array<{ id: Department | 'ALL'; label: string; tag: string }> = [
     { id: 'ALL', label: 'All Districts', tag: 'Skyline' },
     { id: 'CSE', label: 'CSE Sector', tag: 'Compute' },
-    { id: 'IT', label: 'IT Cyberhub', tag: 'Cloud' },
-    { id: 'AI & Data Science', label: 'AI/DS Valley', tag: 'ML Ops' },
+    { id: 'ISE', label: 'ISE Cyberhub', tag: 'Cloud' },
+    { id: 'AIML', label: 'AI/ML Valley', tag: 'ML Ops' },
+    { id: 'MC', label: 'MC Nexus', tag: 'Data' },
+    { id: 'EEE', label: 'EEE Grid', tag: 'Power' },
     { id: 'ECE', label: 'ECE Subnet', tag: 'IoT' },
-    { id: 'Cyber Security', label: 'Cyber Defense', tag: 'Security' },
+    { id: 'MECH', label: 'MECH Works', tag: 'Systems' },
+    { id: 'AUTO', label: 'AUTO Yard', tag: 'Mobility' },
+    { id: 'CIVIL', label: 'CIVIL Grounds', tag: 'Infra' },
+    { id: 'AERO', label: 'AERO Bay', tag: 'Flight' },
+    { id: 'OTHERS', label: 'Other Districts', tag: 'Misc' },
   ];
 
   return (

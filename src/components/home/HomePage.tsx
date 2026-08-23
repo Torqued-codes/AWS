@@ -17,6 +17,7 @@ import {
 import { soundEngine } from '../../utils/soundEngine';
 import { HeroAWSScene } from './HeroAWSScene';
 import { HeroThreeScene } from './HeroThreeScene';
+import { SectionAmbientBackdrop } from './SectionAmbientBackdrop';
 
 // Typed shape for the metrics bar — deliberately decoupled from any one
 // data source. Today these four values are derived from the in-memory
@@ -65,7 +66,7 @@ export const HomePage: React.FC = () => {
       iconColor: 'text-aws-orange',
       iconBg: 'bg-amber-500/10 border-amber-500/20',
       title: '3D Procedural Metropolis',
-      desc: 'Built on Three.js and WebGL. Every 50 points adds a physical floor to your skyscraper. Rotate 360°, pan across blocks, and inspect peers in a live city.',
+      desc: 'Real-Time WebGL City Engine — Visualizes code contributions and quiz scores as physical skyscraper tiers using Three.js instanced meshes. Features 360° orbit controls, dynamic lighting shaders, and live peer block inspection.',
       tag: 'Git-City Engine',
     },
     {
@@ -73,7 +74,7 @@ export const HomePage: React.FC = () => {
       iconColor: 'text-rose-400',
       iconBg: 'bg-rose-500/10 border-rose-500/20',
       title: '5-Heart Attempt Engine',
-      desc: 'Anti-guess mechanics: 5 hearts per player. Wrong answers cost a heart. Reaching zero triggers a cooldown (+1 heart every 45 mins). Earn more by studying.',
+      desc: 'Gamified Knowledge Retention — Prevents brute-force guessing via a strict 5-heart stamina pool. Incorrect answers trigger an automated 45-minute cooldown per heart, incentivizing thorough study over random attempts.',
       tag: 'Adaptive Pacing',
     },
     {
@@ -81,7 +82,7 @@ export const HomePage: React.FC = () => {
       iconColor: 'text-cyan-400',
       iconBg: 'bg-cyan-500/10 border-cyan-500/20',
       title: 'Official Cert Question Bank',
-      desc: 'Curated AWS Cloud Practitioner & Solutions Architect Associate questions covering IAM, S3, VPC, EC2, DynamoDB, and the Well-Architected Framework.',
+      desc: 'AWS Practitioner & SAA-C03 Questions — 500+ domain-tagged MCQs covering IAM policies, S3 lifecycle rules, VPC subnet architecture, EC2 auto-scaling, and Well-Architected frameworks.',
       tag: 'Domain-Tagged',
     },
     {
@@ -89,7 +90,7 @@ export const HomePage: React.FC = () => {
       iconColor: 'text-purple-400',
       iconBg: 'bg-purple-500/10 border-purple-500/20',
       title: 'Verifiable Certificates',
-      desc: 'Top weekly and monthly architects unlock AWS Student Club certificates with dynamic verification codes, custom rank titles, and 1-click high-res export.',
+      desc: 'On-Chain & Dynamic Certificates — High-performing architects generate cryptographic verification hashes, custom rank badges, and high-resolution PDF exports signed by chapter SPOCs.',
       tag: 'SPOC Signed',
     },
   ];
@@ -211,8 +212,13 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ── FEATURE CARDS ─────────────────────────────────────────────────── */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
+      <section className="relative py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Ambient wireframe continuation of the hero's 3D scene — kept
+            very low-opacity so the glass cards and copy stay fully
+            legible on top of it. */}
+        <SectionAmbientBackdrop density="low" />
+
+        <div className="relative z-10 max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-[11px] font-mono uppercase tracking-[0.15em] text-aws-orange font-bold">
               PLATFORM ARCHITECTURE
@@ -228,15 +234,17 @@ export const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {features.map((f) => {
               const Icon = f.icon;
+              const [leadIn, ...rest] = f.desc.split(' — ');
+              const bodyText = rest.join(' — ');
               return (
                 <div
                   key={f.title}
-                  className="group relative backdrop-blur-xl bg-neutral-900/50 border border-neutral-800 hover:border-amber-500/30 rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
+                  className="group relative backdrop-blur-xl bg-neutral-900/50 border border-neutral-800 hover:border-amber-500/40 rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 overflow-hidden"
                 >
                   {/* Subtle glow that blooms in on hover, matching the card border accent */}
                   <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at top right, rgba(245,158,11,0.06) 0%, transparent 65%)' }}
+                    style={{ background: 'radial-gradient(ellipse at top right, rgba(245,158,11,0.08) 0%, transparent 65%)' }}
                   />
 
                   <div className="relative z-10">
@@ -244,7 +252,7 @@ export const HomePage: React.FC = () => {
                       <div className={`w-10 h-10 rounded-xl ${f.iconBg} border flex items-center justify-center ${f.iconColor}`}>
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-950/80 border border-zinc-800 px-2 py-1 rounded-lg tracking-wide">
+                      <span className="text-[10px] font-stats font-bold text-zinc-400 bg-zinc-950/80 border border-zinc-800 px-2 py-1 rounded-lg tracking-wide">
                         {f.tag}
                       </span>
                     </div>
@@ -252,7 +260,8 @@ export const HomePage: React.FC = () => {
                       {f.title}
                     </h3>
                     <p className="text-sm text-zinc-400 font-sans leading-relaxed">
-                      {f.desc}
+                      <span className="font-stats font-bold text-amber-400/90">{leadIn}</span>
+                      {bodyText && <> — {bodyText}</>}
                     </p>
                   </div>
                   <div className="relative z-10 mt-5 pt-4 border-t border-neutral-800/80 flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
@@ -267,8 +276,10 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ── BOTTOM LAUNCH CTA ─────────────────────────────────────────────── */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
+      <section className="relative py-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <SectionAmbientBackdrop density="low" />
+
+        <div className="relative z-10 max-w-3xl mx-auto">
           <div
             className="relative rounded-3xl p-10 sm:p-14 text-center overflow-hidden border border-neutral-800/60"
             style={{ background: 'linear-gradient(135deg, #0d0f14 0%, #111418 50%, #0d0f14 100%)' }}
