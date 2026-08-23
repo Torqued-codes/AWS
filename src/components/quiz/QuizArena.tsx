@@ -9,7 +9,8 @@ import {
   ArrowRight,
   Terminal,
   Layers,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { AnswerReviewModal } from './AnswerReviewModal';
 import { HeartCooldownModal } from './HeartCooldownModal';
@@ -112,13 +113,26 @@ export const QuizArena: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-zinc-400 font-mono mt-0.5">
-              Solved: {answeredCount}/{weekQuestions.length} Modules • +50 Pts per node
+              Solved: {answeredCount}/{weekQuestions.length} Modules • +10 Pts per correct
             </p>
           </div>
         </div>
 
         {/* Live HUD */}
         <div className="flex items-center gap-2">
+          {/* Combo indicator — only shown once a live 3+ correct-in-a-row
+              combo is active, so it doesn't clutter the header at 0/1/2.
+              Shows the CURRENT escalating bonus (+5 at combo 3, +10 at
+              combo 4, +15 at combo 5, ...), not a flat amount. */}
+          {(currentUser.comboStreak || 0) >= 3 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-xs font-mono font-bold text-emerald-300">
+              <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+              <span>
+                {currentUser.comboStreak}x COMBO · +{((currentUser.comboStreak || 0) - 2) * 5} BONUS
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-rose-500/30 text-xs font-mono font-bold text-rose-300">
             <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
             <span>{currentUser.hearts}/5 HEARTS</span>

@@ -67,6 +67,10 @@ export interface Student {
   activeDays?: number; // Consecutive days participated (5D streak)
   bio?: string; // Short user bio, editable from profile drawer
   lightsOn?: boolean; // Building lights toggle (undefined = on by default)
+  comboStreak?: number; // Consecutive CORRECT quiz answers in a row (resets
+  // to 0 on any wrong answer). Deliberately separate from `streak` above,
+  // which represents daily engagement and drives the flame/"Xd" UI and
+  // streak badges — this field exists purely to gate the quiz combo bonus.
 }
 
 export interface QuestionOption {
@@ -111,3 +115,4 @@ export interface AuthSession {
   name: string;
   registeredAt: number;
 }
+

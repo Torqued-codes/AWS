@@ -9,6 +9,7 @@ import {
 } from '../data/mockData';
 import { soundEngine } from '../utils/soundEngine';
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
+import { sortStudents } from '../utils/ranking';
 
 const REFILL_INTERVAL_SECS = 45 * 60;
 const MAX_HEARTS = 5;
@@ -291,9 +292,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isCorrect = selectedOption === question.correctOption;
 
     if (isCorrect) {
-      const basePoints = 50;
-      const streakMultiplier = Math.min(currentUser.streak, 5) * 5;
-      const earnedPoints = basePoints + streakMultiplier;
+      // ── Weekly Arena scoring rules ──────────────────────────────────
+      // • Every correct answer: +10 points, always.
+      // • The moment your consecutive-correct combo reaches 3 (in this
+      //   attempt, not the daily engagement `streak`), a +5 bonus kicks
+      //   in on top of the base 10 (= 15/question at combo 3).
+      // • The bonus keeps ESCALATING by another +5 for every additional
+      //   correct answer while the combo stays unbroken: combo 3 → +5,
+      //   combo 4 → +10, combo 5 → +15, and so on (20, 25, 30... pts).
+      // • Any wrong answer resets the combo to 0 — scoring drops back
+      //   to plain +10 per correct answer until a fresh 3-in-a-row combo
+      //   is built again, at which point the bonus restarts from +5 and
+      //   escalates the same way. This cycle repeats indefinitely
+      //   through the quiz.
+      // • No points are ever deducted for a wrong answer (only a heart).
+      const basePoints = 10;
+      const newComboStreak = (currentUser.comboStreak || 0) + 1;
+      const bonusSteps = newComboStreak >= 3 ? newComboStreak - 2 : 0; // 3→1, 4→2, 5→3...
+      const comboBonus = bonusSteps * 5;
+      const earnedPoints = basePoints + comboBonus;
 
       const newPoints = currentUser.points + earnedPoints;
       const newWeeklyPoints = currentUser.weeklyPoints + earnedPoints;
@@ -321,6 +338,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         longestStreak: newLongestStreak,
         floors: newFloors,
         buildingTier: newTier,
+        comboStreak: newComboStreak,
+        weeklyCorrectCount: (prev.weeklyCorrectCount || 0) + 1,
+        lastPointsUpdateAt: Date.now(),
         activityLog: [...(prev.activityLog || []), Date.now()],
       }));
 
@@ -354,6 +374,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hearts: newHearts,
         lastHeartLossTime: prev.lastHeartLossTime || Date.now(),
         streak: 0,
+        comboStreak: 0,
+        weeklyWrongCount: (prev.weeklyWrongCount || 0) + 1,
         activityLog: [...(prev.activityLog || []), Date.now()],
       }));
 
@@ -416,19 +438,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // as the camera "snapping"/resetting in a loop instead of smoothly
   // flying to the clicked building. Memoizing keeps the reference
   // stable unless `currentUser` or `studentList` actually change.
+  //
+  // Sorted with the shared cascading tie-breaker (see utils/ranking.ts)
+  // rather than a raw points-only sort, so students who land on the
+  // exact same total (very likely with 25-30 MCQs/week) resolve
+  // deterministically instead of arbitrarily.
   const allStudents: Student[] = useMemo(() => (
-    [
-      currentUser,
-      ...studentList.filter(s => s.id !== currentUser.id)
-    ].sort((a, b) => b.points - a.points)
+    sortStudents(
+      [currentUser, ...studentList.filter(s => s.id !== currentUser.id)],
+      'monthly'
+    )
   ), [currentUser, studentList]);
 
   // Weekly / monthly (all-time) rankings, used to gate certificate access
   // to only the current top-5 performers. "Monthly" reuses the same
   // all-time point totals as `allStudents` since that's the full-history
-  // metric; weekly uses each student's rolling weeklyPoints.
+  // metric; weekly uses each student's rolling weeklyPoints — both run
+  // through the same cascading tie-breaker.
   const weeklyRanked = useMemo(() => (
-    [...allStudents].sort((a, b) => (b.weeklyPoints || b.points) - (a.weeklyPoints || a.points))
+    sortStudents(allStudents, 'weekly')
   ), [allStudents]);
   const monthlyRanked = allStudents; // already sorted by all-time points
 

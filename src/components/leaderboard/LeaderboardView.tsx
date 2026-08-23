@@ -12,6 +12,7 @@ import {
   Calendar 
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
+import { sortStudents } from '../../utils/ranking';
 
 interface LeaderboardViewProps {
   onOpenCertificate: (student: Student) => void;
@@ -27,13 +28,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState<Department | 'ALL'>('ALL');
 
-  const sortedStudents = useMemo(() => {
-    const list = [...students];
-    if (timeframe === 'weekly') {
-      return list.sort((a, b) => (b.weeklyPoints || b.points) - (a.weeklyPoints || a.points));
-    }
-    return list.sort((a, b) => b.points - a.points);
-  }, [students, timeframe]);
+  // Cascading tie-breaker (points → who reached it first → weekly
+  // correct count → fewest wrong attempts) instead of a raw points-only
+  // sort — see utils/ranking.ts for the full rule. Matters most right
+  // at the Top-5 boundary since that's what gates certificate access.
+  const sortedStudents = useMemo(() => (
+    sortStudents(students, timeframe)
+  ), [students, timeframe]);
 
   const filteredStudents = useMemo(() => {
     return sortedStudents.filter((s) => {

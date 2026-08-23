@@ -141,7 +141,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <Cloud className="w-6 h-6 fill-current" />
           </div>
           <h1 className="text-2xl font-display font-bold text-white tracking-tight">
-            AWS Cloud City
+            AWSxCYNERGY
           </h1>
           <p className="text-xs text-zinc-400 font-sans mt-1">
             College Cloud Computing Challenge Platform

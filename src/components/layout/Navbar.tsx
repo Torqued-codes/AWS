@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
   const navItems = [
     { id: 'home', label: 'Overview', icon: Home },
     { id: 'city', label: '3D City', icon: Building2 },
-    { id: 'quiz', label: 'Weekly Arena', icon: Zap, tag: '+50' },
+    { id: 'quiz', label: 'Weekly Arena', icon: Zap, tag: '+10' },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'announcements', label: 'Certs & Events', icon: Radio },
   ] as const;
@@ -64,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-display font-bold text-base sm:text-lg tracking-tight text-white group-hover:text-aws-orange transition-colors" style={{ letterSpacing: '-0.02em' }}>
-                  AWS <span className="text-aws-orange">Cloud City</span>
+                  AWS <span className="text-aws-orange">CYNERGY</span>
                 </span>
                 <span className="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono font-bold bg-zinc-900 text-zinc-400 border border-zinc-800 rounded">
                   COLLEGE
