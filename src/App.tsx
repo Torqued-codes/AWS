@@ -178,15 +178,7 @@ const MainAppContent: React.FC = () => {
             >
               Leaderboard
             </button>
-            <span>•</span>
-            <button 
-              onClick={() => { soundEngine.playTap(); handleEnterAdmin(); }}
-              className="text-zinc-600 hover:text-purple-400 flex items-center gap-1 transition-colors"
-              title="Restricted SPOC Portal"
-            >
-              <Lock className="w-3 h-3" />
-              <span>SPOC Console (/admin)</span>
-            </button>
+            
           </div>
 
         </div>

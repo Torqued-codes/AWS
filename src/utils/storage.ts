@@ -1,7 +1,14 @@
+// src/utils/storage.ts
 export const STORAGE_KEYS = {
   CURRENT_USER: 'aws_cloud_city_user',
   SUBMISSIONS: 'aws_cloud_city_submissions',
-  CUSTOM_QUESTIONS: 'aws_cloud_city_custom_questions',
+  // Stores the FULL question bank (seed + admin-added, including any
+  // admin edits/deletes to seed questions) — not just admin-added ones —
+  // so the admin console's edit/delete actions persist correctly.
+  QUESTIONS: 'aws_cloud_city_questions',
+  // Stores the FULL announcements feed so admin-published/edited/removed
+  // broadcasts persist across reloads, same as everything else.
+  ANNOUNCEMENTS: 'aws_cloud_city_announcements',
   MUTED: 'aws_cloud_city_muted',
   ACTIVE_WEEK: 'aws_cloud_city_active_week'
 };

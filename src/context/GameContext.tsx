@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Student, Question, UserSubmission, Announcement, Badge, BuildingTier } from '../types';
+import { Student, Question, UserSubmission, Announcement, Badge, BuildingTier, Department, Gender } from '../types';
 import { 
   INITIAL_QUESTIONS, 
   MOCK_STUDENTS, 
@@ -24,7 +24,6 @@ interface GameContextType {
   activeWeek: number;
   isMuted: boolean;
   cooldownRemainingSecs: number;
-  isAdminMode: boolean;
   activeTab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin';
   selectedStudentModal: Student | null;
   privacyNotice: string | null;
@@ -40,7 +39,6 @@ interface GameContextType {
   refillHearts: () => void;
   toggleMute: () => void;
   setActiveTab: (tab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin') => void;
-  setIsAdminMode: (admin: boolean) => void;
   setSelectedStudentModal: (student: Student | null) => void;
   selectStudentForModal: (student: Student) => void;
   dismissPrivacyNotice: () => void;
@@ -50,12 +48,28 @@ interface GameContextType {
   setLastAnswerResult: (result: GameContextType['lastAnswerResult']) => void;
   setActiveWeek: (week: number) => void;
   addNewQuestion: (question: Omit<Question, 'id'>) => void;
+  editQuestion: (question: Question) => void;
+  deleteQuestion: (questionId: string) => void;
   addNewAnnouncement: (announcement: Omit<Announcement, 'id'>) => void;
+  editAnnouncement: (announcement: Announcement) => void;
+  deleteAnnouncement: (announcementId: string) => void;
   removeStudent: (studentId: string) => void;
+  addNewStudent: (input: {
+    name: string;
+    rollNumber: string;
+    department: Department;
+    year: 1 | 2 | 3 | 4;
+    gender?: Gender;
+  }) => void;
   updateUserProfile: (updates: Partial<Student>) => void;
   trackActiveDay: () => void;
   toggleBuildingLights: () => void;
   isCertEligible: (studentId: string) => boolean;
+  // Admin-only: resets EVERY registered student's hearts to full (5/5),
+  // writing the change straight to the persisted student list in
+  // localStorage — distinct from `refillHearts`, which only refills the
+  // currently signed-in student (used by the student-facing cooldown modal).
+  refillAllHearts: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -89,16 +103,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadFromStorage<UserSubmission[]>(STORAGE_KEYS.SUBMISSIONS, [])
   );
 
-  const [customQuestions, setCustomQuestions] = useState<Question[]>(() => 
-    loadFromStorage<Question[]>(STORAGE_KEYS.CUSTOM_QUESTIONS, [])
+  // Persists the FULL question bank (seed questions + admin-added ones),
+  // so admin edits/deletes to ANY question — including original seed
+  // data, not just admin-added items — survive a reload.
+  const [questions, setQuestions] = useState<Question[]>(() =>
+    loadFromStorage<Question[]>(STORAGE_KEYS.QUESTIONS, INITIAL_QUESTIONS)
   );
 
-  const [questions, setQuestions] = useState<Question[]>([
-    ...INITIAL_QUESTIONS,
-    ...customQuestions
-  ]);
-
-  const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
+  // Persists the FULL announcements feed for the same reason — admin
+  // publish/edit/delete actions on broadcasts now survive a reload and
+  // immediately reflect in the student portal's Certs & Events feed
+  // (EventsHub / AnnouncementBar), since both read straight from this
+  // shared context state.
+  const [announcements, setAnnouncements] = useState<Announcement[]>(() =>
+    loadFromStorage<Announcement[]>(STORAGE_KEYS.ANNOUNCEMENTS, INITIAL_ANNOUNCEMENTS)
+  );
   const [badges] = useState<Badge[]>(INITIAL_BADGES);
   const [activeWeek, setActiveWeekState] = useState<number>(() => 
     loadFromStorage<number>(STORAGE_KEYS.ACTIVE_WEEK, 1)
@@ -108,7 +127,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const [cooldownRemainingSecs, setCooldownRemainingSecs] = useState<number>(0);
-  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin'>('home');
   const [selectedStudentModal, setSelectedStudentModal] = useState<Student | null>(null);
   const [privacyNotice, setPrivacyNotice] = useState<string | null>(null);
@@ -146,6 +164,20 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     saveToStorage('aws_cloud_city_students_list', studentList);
   }, [studentList]);
+
+  // Persist Question Bank (seed + admin-added, including edits/deletes)
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.QUESTIONS, questions);
+  }, [questions]);
+
+  // Persist Announcements/Broadcasts — admin publishes/edits/deletes here
+  // flow straight into localStorage and are read by the student portal's
+  // Certs & Events feed (EventsHub) and the top AnnouncementBar via the
+  // same shared context state, so they show up immediately with no
+  // separate sync step needed.
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.ANNOUNCEMENTS, announcements);
+  }, [announcements]);
 
   // Handle Heart Refill Timer
   useEffect(() => {
@@ -191,9 +223,64 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setShowCooldownModal(false);
   }, []);
 
+  // Admin Dev Control: replenishes hearts to 5/5 for EVERY registered
+  // student record — both the live `currentUser` session and the full
+  // persisted `studentList` in localStorage — unlike `refillHearts`
+  // above, which only ever touches the single signed-in student.
+  const refillAllHearts = useCallback(() => {
+    setCurrentUser(prev => ({
+      ...prev,
+      hearts: MAX_HEARTS,
+      lastHeartLossTime: null
+    }));
+    setStudentList(prev => prev.map(s => ({
+      ...s,
+      hearts: MAX_HEARTS,
+      lastHeartLossTime: null
+    })));
+    setCooldownRemainingSecs(0);
+    soundEngine.playRefill();
+  }, []);
+
   const removeStudent = useCallback((studentId: string) => {
     soundEngine.playFloorAdded();
     setStudentList(prev => prev.filter(s => s.id !== studentId));
+  }, []);
+
+  // Admin manual student registration — used by the SPOC Student
+  // Directory's "Add Student" form to onboard someone directly (e.g. a
+  // late registration) without them going through self-signup.
+  const addNewStudent = useCallback((input: {
+    name: string;
+    rollNumber: string;
+    department: Department;
+    year: 1 | 2 | 3 | 4;
+    gender?: Gender;
+  }) => {
+    const newStudent: Student = {
+      id: `stu_manual_${Date.now()}`,
+      name: input.name,
+      rollNumber: input.rollNumber,
+      department: input.department,
+      year: input.year,
+      gender: input.gender,
+      points: 0,
+      weeklyPoints: 0,
+      streak: 0,
+      longestStreak: 0,
+      hearts: MAX_HEARTS,
+      lastHeartLossTime: null,
+      unlockedBadges: [],
+      buildingTier: 'shack',
+      floors: 0,
+      accentColor: '#FF9900',
+      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(input.rollNumber || input.name)}`,
+      isPublic: true,
+      registeredAt: Date.now(),
+      activityLog: [],
+    };
+    soundEngine.playFloorAdded();
+    setStudentList(prev => [newStudent, ...prev]);
   }, []);
 
   const updateUserProfile = useCallback((updates: Partial<Student>) => {
@@ -408,14 +495,19 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...q,
       id: `q_custom_${Date.now()}`
     };
-    const updated = [newQ, ...questions];
-    setQuestions(updated);
-    setCustomQuestions(prev => {
-      const u = [newQ, ...prev];
-      saveToStorage(STORAGE_KEYS.CUSTOM_QUESTIONS, u);
-      return u;
-    });
+    setQuestions(prev => [newQ, ...prev]);
   };
+
+  // Overwrites an existing question in place (by id) — works for both
+  // admin-added questions and the original seed bank, since the whole
+  // list is persisted together now (see STORAGE_KEYS.QUESTIONS above).
+  const editQuestion = useCallback((updated: Question) => {
+    setQuestions(prev => prev.map(q => (q.id === updated.id ? updated : q)));
+  }, []);
+
+  const deleteQuestion = useCallback((questionId: string) => {
+    setQuestions(prev => prev.filter(q => q.id !== questionId));
+  }, []);
 
   const addNewAnnouncement = (ann: Omit<Announcement, 'id'>) => {
     const newAnn: Announcement = {
@@ -424,6 +516,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setAnnouncements(prev => [newAnn, ...prev]);
   };
+
+  // Overwrites an existing announcement in place (by id).
+  const editAnnouncement = useCallback((updated: Announcement) => {
+    setAnnouncements(prev => prev.map(a => (a.id === updated.id ? updated : a)));
+  }, []);
+
+  const deleteAnnouncement = useCallback((announcementId: string) => {
+    setAnnouncements(prev => prev.filter(a => a.id !== announcementId));
+  }, []);
 
   // Combine currentUser with studentList for rankings & 3D city.
   //
@@ -482,7 +583,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeWeek,
         isMuted,
         cooldownRemainingSecs,
-        isAdminMode,
         activeTab,
         selectedStudentModal,
         privacyNotice,
@@ -491,9 +591,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastAnswerResult,
         submitAnswer,
         refillHearts,
+        refillAllHearts,
         toggleMute,
         setActiveTab,
-        setIsAdminMode,
         setSelectedStudentModal,
         selectStudentForModal,
         dismissPrivacyNotice,
@@ -503,8 +603,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLastAnswerResult,
         setActiveWeek,
         addNewQuestion,
+        editQuestion,
+        deleteQuestion,
         addNewAnnouncement,
+        editAnnouncement,
+        deleteAnnouncement,
         removeStudent,
+        addNewStudent,
         updateUserProfile,
         trackActiveDay,
         toggleBuildingLights,
