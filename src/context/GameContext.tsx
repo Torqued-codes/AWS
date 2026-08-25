@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Student, Question, UserSubmission, Announcement, Badge, BuildingTier, Department, Gender } from '../types';
+import { calculateDayStreak } from '../utils/activityStreak';
 import { 
   INITIAL_QUESTIONS, 
   MOCK_STUDENTS, 
@@ -145,6 +146,19 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [showCooldownModal, setShowCooldownModal] = useState<boolean>(false);
   const [lastAnswerResult, setLastAnswerResult] = useState<GameContextType['lastAnswerResult']>(null);
+
+  // Recomputes the daily-activity streak on load against the current
+  // date, so a broken streak (a full calendar day skipped since the last
+  // session) shows correctly right away instead of waiting for the next
+  // answered question to notice the gap.
+  useEffect(() => {
+    setCurrentUser(prev => {
+      const recomputed = calculateDayStreak(prev.activityLog);
+      if (recomputed === prev.streak) return prev;
+      return { ...prev, streak: recomputed };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Sync mute state
   useEffect(() => {
@@ -407,7 +421,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const newPoints = currentUser.points + earnedPoints;
       const newWeeklyPoints = currentUser.weeklyPoints + earnedPoints;
-      const newStreak = currentUser.streak + 1;
+      const newActivityLog = [...(currentUser.activityLog || []), Date.now()];
+      const newStreak = calculateDayStreak(newActivityLog);
       const prevFloors = currentUser.floors;
       const newFloors = calculateFloors(newPoints);
       const newTier = calculateTier(newPoints);
@@ -434,7 +449,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         comboStreak: newComboStreak,
         weeklyCorrectCount: (prev.weeklyCorrectCount || 0) + 1,
         lastPointsUpdateAt: Date.now(),
-        activityLog: [...(prev.activityLog || []), Date.now()],
+        activityLog: newActivityLog,
       }));
 
       soundEngine.playCorrect();
@@ -452,6 +467,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } else {
       const newHearts = Math.max(0, currentUser.hearts - 1);
+      const newActivityLog = [...(currentUser.activityLog || []), Date.now()];
+      const newStreak = calculateDayStreak(newActivityLog);
       const newSubmission: UserSubmission = {
         questionId,
         selectedOption,
@@ -466,10 +483,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...prev,
         hearts: newHearts,
         lastHeartLossTime: prev.lastHeartLossTime || Date.now(),
-        streak: 0,
+        streak: newStreak,
+        longestStreak: Math.max(prev.longestStreak || 0, newStreak),
         comboStreak: 0,
         weeklyWrongCount: (prev.weeklyWrongCount || 0) + 1,
-        activityLog: [...(prev.activityLog || []), Date.now()],
+        activityLog: newActivityLog,
       }));
 
       soundEngine.playWrong();

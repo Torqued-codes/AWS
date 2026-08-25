@@ -158,13 +158,27 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             <button
               onClick={() => { soundEngine.playTap(); setShowStreakCalendar(true); }}
               className="h-9 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 px-2.5 rounded-xl transition-colors group whitespace-nowrap"
-              title="View streak history"
+              title="Days active in a row"
             >
               <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
               <span className="font-stats font-bold text-xs text-amber-300 leading-none">
                 {currentUser.streak}d
               </span>
             </button>
+
+            {/* Correct-Answer Streak — current in-quiz combo, separate
+                from the daily activity streak above */}
+            {(currentUser.comboStreak || 0) > 0 && (
+              <div
+                className="h-9 flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 rounded-xl whitespace-nowrap"
+                title="Correct answers in a row (this quiz combo)"
+              >
+                <Zap className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400 shrink-0" />
+                <span className="font-stats font-bold text-xs text-cyan-300 leading-none">
+                  {currentUser.comboStreak}x
+                </span>
+              </div>
+            )}
 
             {/* Mute Toggle */}
             <button
