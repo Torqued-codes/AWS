@@ -58,8 +58,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             onClick={() => { soundEngine.playTap(); setActiveTab('home'); }}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-aws-orange text-zinc-950 font-black shadow-md shadow-aws-orange/20 group-hover:scale-105 transition-transform">
-              <Cloud className="w-4 h-4 fill-current" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg shadow-md shadow-aws-orange/20 group-hover:scale-105 transition-transform overflow-hidden">
+              <img 
+                src="/images/aws.png" 
+                alt="AWS Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -102,8 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
             })}
           </nav>
 
-          {/* Right: HUD & Profile — every pill shares the same h-9 height so
-              hearts / streak / mute / profile line up on a single baseline */}
+          {/* Right: HUD & Profile */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
             
             {/* Hearts Counter */}
@@ -172,8 +175,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
               {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
             </button>
 
-            {/* Profile Avatar — fixed height matches sibling pills; name/points
-                are truncated with nowrap so long names never wrap or overflow */}
+            {/* Profile Avatar */}
             <button
               onClick={() => { soundEngine.playTap(); onOpenProfile(); }}
               className="h-9 flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 pl-1 pr-1 sm:pr-3 rounded-xl transition-all group max-w-[160px] md:max-w-[220px]"

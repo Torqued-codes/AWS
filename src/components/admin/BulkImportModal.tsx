@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { CertDomain, Question } from '../../types';
 import { extractTextFromDocument } from '../../utils/documentParser';
@@ -70,6 +70,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   const [error, setError] = useState<string | null>(null);
   const [wasTruncated, setWasTruncated] = useState(false);
   const [chunkProgress, setChunkProgress] = useState<{ current: number; total: number } | null>(null);
+  const [waitSeconds, setWaitSeconds] = useState(0);
   const [staged, setStaged] = useState<EditableStaged[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [targetWeek, setTargetWeek] = useState(activeWeek);
@@ -77,6 +78,14 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   const [apiKeyInput, setApiKeyInput] = useState('');
 
   const keyFromEnv = isGroqApiKeyFromEnv();
+
+  useEffect(() => {
+    if (waitSeconds <= 0) return;
+    const timer = setInterval(() => {
+      setWaitSeconds((s) => (s > 1 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [waitSeconds > 0]);
 
   if (!isOpen) return null;
 
@@ -86,6 +95,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     setError(null);
     setWasTruncated(false);
     setChunkProgress(null);
+    setWaitSeconds(0);
     setStaged([]);
     setExpandedId(null);
     setShowSuccessToast(false);
@@ -121,6 +131,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       const { questions, wasTruncated: truncated } = await parseQuestionsWithGroq(text, {
         apiKey,
         onProgress: (current, total) => setChunkProgress(total > 1 ? { current, total } : null),
+        onWaiting: (seconds) => setWaitSeconds(seconds),
       });
       setWasTruncated(truncated);
 
@@ -271,9 +282,11 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                   <>
                     <Loader2 className="w-8 h-8 text-aws-orange animate-spin" />
                     <p className="text-sm font-semibold text-white">
-                      {chunkProgress
-                        ? `Extracting questions — pass ${chunkProgress.current} of ${chunkProgress.total}`
-                        : 'Extracting questions...'}
+                      {waitSeconds > 0
+                        ? `Pausing for the free-tier rate limit — ${waitSeconds}s`
+                        : chunkProgress
+                          ? `Extracting questions — pass ${chunkProgress.current} of ${chunkProgress.total}`
+                          : 'Extracting questions...'}
                     </p>
                     {chunkProgress && chunkProgress.total > 1 && (
                       <div className="w-48 h-1 rounded-full bg-neutral-800 overflow-hidden">
@@ -284,7 +297,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                       </div>
                     )}
                     <p className="text-[11px] text-zinc-500">
-                      Long documents are read in multiple passes so nothing near the end gets skipped.
+                      {waitSeconds > 0
+                        ? 'Groq\'s free tier caps requests per minute — this pauses automatically and resumes on its own.'
+                        : 'Long documents are read in multiple passes so nothing near the end gets skipped.'}
                     </p>
                   </>
                 )}

@@ -1,12 +1,7 @@
 // Client-side document text extraction for the Bulk Question Importer.
-//
-// Both PDF and DOCX parsing happen entirely in the browser — no file
-// bytes are ever sent to a server. Only the extracted plain text is
-// later sent to Groq (see groqService.ts) for question parsing.
 
 import * as pdfjsLib from 'pdfjs-dist';
-// Vite-native way to get a bundled, hashed URL for the pdf.js worker
-// script so it's included in the production build automatically.
+
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -25,11 +20,6 @@ export function detectDocType(file: File): SupportedDocType | null {
   return null;
 }
 
-/**
- * Extracts raw text from a PDF file entirely client-side using pdfjs-dist.
- * Text items are joined per page, with a page-break marker in between so
- * the AI parser retains some structural context.
- */
 export async function extractTextFromPDF(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
@@ -39,18 +29,39 @@ export async function extractTextFromPDF(file: File): Promise<string> {
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item) => ('str' in item ? item.str : ''))
-      .join(' ');
-    pageTexts.push(pageText);
+
+    const items = content.items
+      .filter((it): it is typeof it & { str: string; transform: number[] } => 'str' in it && 'transform' in it)
+      .map((it) => ({ str: it.str, x: it.transform[4], y: it.transform[5] }))
+      .filter((it) => it.str.length > 0);
+
+    items.sort((a, b) => (Math.abs(a.y - b.y) < 2 ? a.x - b.x : b.y - a.y));
+
+    const lines: string[] = [];
+    let currentLine: string[] = [];
+    let lastY: number | null = null;
+    let typicalLineGap = 0;
+
+    for (const item of items) {
+      if (lastY === null || Math.abs(item.y - lastY) < 2) {
+        currentLine.push(item.str);
+      } else {
+        const gap = lastY - item.y;
+        lines.push(currentLine.join(' ').replace(/\s+/g, ' ').trim());
+        if (typicalLineGap > 0 && gap > typicalLineGap * 1.6) lines.push('');
+        if (gap > 0) typicalLineGap = typicalLineGap === 0 ? gap : typicalLineGap * 0.7 + gap * 0.3;
+        currentLine = [item.str];
+      }
+      lastY = item.y;
+    }
+    if (currentLine.length) lines.push(currentLine.join(' ').replace(/\s+/g, ' ').trim());
+
+    pageTexts.push(lines.join('\n'));
   }
 
   return pageTexts.join('\n\n--- Page Break ---\n\n');
 }
 
-/**
- * Extracts raw text from a DOCX file entirely client-side using mammoth.
- */
 export async function extractTextFromDOCX(file: File): Promise<string> {
   const mammoth = await import('mammoth');
   const arrayBuffer = await file.arrayBuffer();
@@ -58,10 +69,6 @@ export async function extractTextFromDOCX(file: File): Promise<string> {
   return result.value;
 }
 
-/**
- * Detects the file type and routes to the correct extractor.
- * Throws a descriptive error for unsupported file types.
- */
 export async function extractTextFromDocument(file: File): Promise<{ text: string; docType: SupportedDocType }> {
   const docType = detectDocType(file);
   if (!docType) {
@@ -79,3 +86,4 @@ export async function extractTextFromDocument(file: File): Promise<{ text: strin
 
   return { text: trimmed, docType };
 }
+

@@ -137,16 +137,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="w-full max-w-md relative z-10 animate-fade-in">
         {/* Brand Mark */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-aws-orange text-zinc-950 font-black shadow-glow-orange mb-4">
-            <Cloud className="w-6 h-6 fill-current" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl shadow-glow-orange mb-4 overflow-hidden">
+            <img 
+              src="/images/aws.png" 
+              alt="AWS Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <h1 className="text-2xl font-display font-bold text-white tracking-tight">
             AWSxCYNERGY
           </h1>
-          <p className="text-xs text-zinc-400 font-sans mt-1">
+        <p className="text-xs text-zinc-400 font-sans mt-1">
             College Cloud Computing Challenge Platform
-          </p>
-        </div>
+        </p>
+      </div>
 
         {/* Tab Toggle */}
         <div className="flex bg-zinc-900/80 border border-zinc-800 p-1 rounded-2xl mb-6">
