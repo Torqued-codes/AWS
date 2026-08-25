@@ -1,14 +1,4 @@
-// Groq AI integration for the Bulk Question Importer.
-//
-// Extracted document text (see documentParser.ts) is sent to Groq's
-// OpenAI-compatible chat completions endpoint with a strict JSON-schema
-// system prompt, and the response is parsed into staged MCQ drafts for
-// admin review before anything touches the live Question Bank.
-
-export type StagedDifficulty = string; // e.g. 'Practitioner' | 'Associate' | 'Pro' — kept as
-// free text rather than a strict union since Groq may return slight
-// variations (e.g. "Foundational") that the admin can still edit/normalize
-// in the staging review step before publishing.
+export type StagedDifficulty = string;
 
 export interface StagedQuestionOption {
   key: 'A' | 'B' | 'C' | 'D';
@@ -16,8 +6,7 @@ export interface StagedQuestionOption {
 }
 
 export interface StagedQuestion {
-  stagingId: string; // client-only id for the review list, replaced with a
-  // real `q_custom_...` id at publish time — never touches the live bank.
+  stagingId: string;
   questionText: string;
   options: StagedQuestionOption[];
   correctKey: 'A' | 'B' | 'C' | 'D';
@@ -26,67 +15,22 @@ export interface StagedQuestion {
   difficulty: StagedDifficulty;
 }
 
-// NOTE on the endpoint: the real Groq OpenAI-compatible chat completions
-// route is `/openai/v1/chat/completions` (matching OpenAI's own path).
-// `/chat_completions` (with an underscore) is not a valid Groq route and
-// would 404 — corrected here so the integration actually works.
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-// llama-3.3-70b-versatile was deprecated by Groq (announced June 2026).
-// openai/gpt-oss-120b is the recommended general-purpose replacement.
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 
-// Per-request character budget so each Groq call stays comfortably inside
-// both the model's context window and its output-token budget (more
-// questions asked for per request means more completion tokens needed to
-// answer, and openai/gpt-oss-120b is a reasoning model that also spends
-// completion tokens on hidden chain-of-thought before it writes the JSON).
-//
-// Sized against Groq's FREE tier for this model specifically: 8,000
-// tokens per minute (TPM), and Groq counts the *requested*
-// max_completion_tokens against that budget up front — not just what's
-// actually generated. A request asking for an 8,000-char chunk plus an
-// 8,000-token completion budget was, on its own, ~10,200 requested
-// tokens: already over the entire per-minute allowance in one call. Kept
-// small here so several chunks can fit inside one minute; see
-// waitForRateLimitBudget() below for the pacing between requests.
 const CHUNK_CHARS = 3200;
-
-// Safety ceiling on how many chunks a single upload will fire off, so one
-// enormous document can't turn into an unbounded number of API calls.
-// Raised from earlier since chunks are now smaller (more of them per doc).
 const MAX_CHUNKS = 24;
-
-// Completion-token budget per request. Enough for a handful of MCQs'
-// worth of JSON — deliberately modest because Groq's free-tier TPM limit
-// is charged against this requested value, not actual usage.
-const MAX_COMPLETION_TOKENS = 1400;
-
-// How many times a single chunk may be automatically split in half and
-// retried if Groq's response comes back truncated or unparseable, instead
-// of silently keeping (or losing) a partial result.
+const MAX_COMPLETION_TOKENS = 1100;
 const MAX_SPLIT_RETRIES = 3;
 
-// --- Free-tier rate limiting (8,000 TPM for openai/gpt-oss-120b) ---
-//
-// Groq's TPM limit is a rolling 60-second budget, checked against
-// requested tokens (prompt + max_completion_tokens) at request time. A
-// client-side sliding window here reserves budget before each call and
-// waits out the window if a request would exceed it, so the importer
-// self-paces instead of hammering the API and getting 413/429s.
 const RATE_LIMIT_TPM = 8000;
-const RATE_LIMIT_SAFETY_MARGIN = 6800; // stay under the hard cap for tokenizer-estimate variance
+const RATE_LIMIT_SAFETY_MARGIN = 7600;
 const rateLimitLog: { time: number; tokens: number }[] = [];
 
-/** Rough token estimate — real tokenizers vary, so this deliberately
- * over-estimates slightly (fewer chars/token) to stay on the safe side. */
 function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 3.3);
+  return Math.ceil(text.length / 3.6);
 }
 
-/** Reserves `tokens` worth of budget against the rolling 60s TPM window,
- * sleeping first if there isn't room yet. Calls onWaiting with the
- * remaining seconds so the UI can show real progress instead of a
- * frozen spinner during the wait. */
 async function waitForRateLimitBudget(
   tokens: number,
   onWaiting?: (waitSeconds: number) => void
@@ -108,12 +52,6 @@ async function waitForRateLimitBudget(
   }
 }
 
-// Matches a question's numbering at the start of a line, e.g. "12.",
-// "12)", "Q12.", "Question 12:". This is the primary signal used to find
-// safe places to cut a document into request-sized chunks — the earlier
-// approach of guessing at paragraph breaks broke down on real PDFs, whose
-// extracted text often has no blank lines to find (see documentParser.ts
-// for the accompanying fix to preserve real line structure at the source).
 const QUESTION_START_RE = /(?:^|\n)[ \t]*(?:Q(?:uestion)?\.?\s*)?\d{1,3}[.)]\s+/g;
 
 function findQuestionBoundaries(text: string): number[] {
@@ -122,13 +60,11 @@ function findQuestionBoundaries(text: string): number[] {
   let match: RegExpExecArray | null;
   while ((match = QUESTION_START_RE.exec(text)) !== null) {
     boundaries.push(match.index);
-    if (match[0].length === 0) QUESTION_START_RE.lastIndex++; // guard against zero-width loops
+    if (match[0].length === 0) QUESTION_START_RE.lastIndex++;
   }
   return boundaries;
 }
 
-/** Fallback for documents with no detectable question numbering: break on
- * the nearest blank line to the target size rather than mid-sentence. */
 function splitOnBlankLines(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
   const chunks: string[] = [];
@@ -146,14 +82,6 @@ function splitOnBlankLines(text: string, maxChars: number): string[] {
   return chunks;
 }
 
-/**
- * Splits raw extracted document text into request-sized chunks WITHOUT
- * ever cutting a question in half. When numbered questions can be
- * detected (the normal case for MCQ study docs / past-paper dumps), every
- * chunk boundary lands exactly on a question start. Only documents where
- * fewer than 3 numbered questions are detected fall back to the blind
- * blank-line splitter.
- */
 function splitIntoChunks(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text];
 
@@ -178,19 +106,7 @@ function splitIntoChunks(text: string, maxChars: number): string[] {
 
 const LOCAL_STORAGE_OVERRIDE_KEY = 'aws_cc_groq_api_key_override';
 
-/**
- * Resolves the Groq API key: prefers the build-time environment variable
- * (VITE_GROQ_API_KEY — see .env.example / README instructions printed by
- * scripts/setup-groq-env.mjs), and falls back to a locally-stored key the
- * admin typed into the in-app fallback field, if any.
- */
 export function getGroqApiKey(): string {
-  // NOTE: this must stay the plain, unwrapped `import.meta.env.X` shape.
-  // Vite/esbuild replaces env vars via a static textual match on exactly
-  // that pattern at build time — wrapping it in optional chaining, an
-  // `as any` cast, or an intermediate variable (e.g. `(import.meta as any)
-  // ?.env?.VITE_GROQ_API_KEY`) breaks the match, so it silently falls back
-  // to a runtime property lookup that is never populated in production.
   const envKey = import.meta.env.VITE_GROQ_API_KEY;
   if (envKey && envKey.trim()) return envKey.trim();
 
@@ -201,20 +117,15 @@ export function getGroqApiKey(): string {
   }
 }
 
-/** True if the key came from .env rather than the in-app fallback field. */
 export function isGroqApiKeyFromEnv(): boolean {
   const envKey = import.meta.env.VITE_GROQ_API_KEY;
   return !!(envKey && envKey.trim());
 }
 
-/** Stores an admin-entered fallback key in localStorage (dev/demo only —
- * this is NOT a secure secret store; a real deployment should keep the
- * key server-side). Only used when VITE_GROQ_API_KEY isn't set. */
 export function setGroqApiKeyOverride(key: string): void {
   try {
     localStorage.setItem(LOCAL_STORAGE_OVERRIDE_KEY, key.trim());
   } catch {
-    // ignore write failures (e.g. private browsing)
   }
 }
 
@@ -222,7 +133,6 @@ export function clearGroqApiKeyOverride(): void {
   try {
     localStorage.removeItem(LOCAL_STORAGE_OVERRIDE_KEY);
   } catch {
-    // ignore
   }
 }
 
@@ -263,19 +173,10 @@ Rules:
 interface GroqParseOptions {
   apiKey: string;
   signal?: AbortSignal;
-  /** Called before each chunk request fires, 1-indexed, e.g. (2, 3). */
   onProgress?: (chunkIndex: number, totalChunks: number) => void;
-  /** Called with seconds remaining while paced by the free-tier rate
-   * limit (0 once clear to proceed), so the UI can show real status
-   * instead of an unexplained pause. */
   onWaiting?: (waitSeconds: number) => void;
 }
 
-/** Sends one chunk of text to Groq. Returns the parsed questions plus
- * whether the response was cut off by the completion-token limit. Paces
- * itself against the free-tier TPM budget first, and if Groq still
- * returns a rate-limit error (413/429) despite that, waits and retries
- * rather than aborting the whole import over one chunk. */
 async function callGroq(
   inputText: string,
   apiKey: string,
@@ -313,9 +214,6 @@ async function callGroq(
     }
 
     if (response.status === 429 || response.status === 413) {
-      // Free-tier rate limit hit despite our own pacing (estimate was a
-      // bit optimistic) — back off and retry instead of failing the
-      // whole import over one chunk.
       const retryAfterHeader = Number(response.headers.get('retry-after'));
       const waitSeconds = Number.isFinite(retryAfterHeader) && retryAfterHeader > 0 ? retryAfterHeader : 20;
       onWaiting?.(waitSeconds);
@@ -381,8 +279,6 @@ function parseContentToQuestions(content: string, stagingIdOffset: number): Stag
     .filter((q: StagedQuestion | null): q is StagedQuestion => q !== null);
 }
 
-/** Splits a chunk roughly in half on the nearest detected question
- * boundary (falling back to a raw midpoint), for the truncation retry. */
 function splitChunkInHalf(text: string): [string, string] {
   const boundaries = findQuestionBoundaries(text);
   if (boundaries.length >= 2) {
@@ -393,14 +289,6 @@ function splitChunkInHalf(text: string): [string, string] {
   return [text.slice(0, mid), text.slice(mid)];
 }
 
-/**
- * Parses one chunk of text into staged questions. If Groq's response comes
- * back truncated (it ran out of completion-token budget partway through
- * the JSON) rather than silently keeping a broken partial result, this
- * splits the chunk in half on a question boundary and retries each half —
- * so a chunk that was still too large for the output budget doesn't cost
- * the questions near its end, up to MAX_SPLIT_RETRIES levels deep.
- */
 async function parseChunk(
   inputText: string,
   apiKey: string,
@@ -422,22 +310,9 @@ async function parseChunk(
     }
   }
 
-  // Out of retries, or couldn't split further — return whatever parsed
-  // successfully rather than throwing and losing every other chunk's
-  // results too.
   return parsed ?? [];
 }
 
-/**
- * Sends extracted document text to Groq and returns parsed staged
- * question drafts. Long documents are split into multiple sequential
- * requests (see splitIntoChunks) rather than being cut off, so every
- * question in the source doc is still sent for extraction — only a
- * document beyond MAX_CHUNKS × CHUNK_CHARS hits the hard safety ceiling
- * and gets flagged as truncated. Throws with a human-readable message on
- * any failure (missing key, network error, bad JSON, non-2xx response,
- * etc.) so the calling UI can surface it directly.
- */
 export async function parseQuestionsWithGroq(
   rawText: string,
   { apiKey, signal, onProgress, onWaiting }: GroqParseOptions

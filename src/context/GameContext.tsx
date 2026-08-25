@@ -55,6 +55,7 @@ interface GameContextType {
   addNewQuestions: (newQuestions: Omit<Question, 'id'>[]) => void;
   editQuestion: (question: Question) => void;
   deleteQuestion: (questionId: string) => void;
+  deleteAllQuestions: () => void;
   addNewAnnouncement: (announcement: Omit<Announcement, 'id'>) => void;
   editAnnouncement: (announcement: Announcement) => void;
   deleteAnnouncement: (announcementId: string) => void;
@@ -524,6 +525,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setQuestions(prev => prev.filter(q => q.id !== questionId));
   }, []);
 
+  const deleteAllQuestions = useCallback(() => setQuestions([]), []);
+
   const addNewAnnouncement = (ann: Omit<Announcement, 'id'>) => {
     const newAnn: Announcement = {
       ...ann,
@@ -621,6 +624,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addNewQuestions,
         editQuestion,
         deleteQuestion,
+        deleteAllQuestions,
         addNewAnnouncement,
         editAnnouncement,
         deleteAnnouncement,

@@ -71,6 +71,9 @@ export interface Student {
   // to 0 on any wrong answer). Deliberately separate from `streak` above,
   // which represents daily engagement and drives the flame/"Xd" UI and
   // streak badges — this field exists purely to gate the quiz combo bonus.
+  weeklyCorrectCount?: number;
+  weeklyWrongCount?: number;
+  lastPointsUpdateAt?: number;
 }
 
 export interface QuestionOption {
@@ -102,7 +105,7 @@ export interface UserSubmission {
 export interface Announcement {
   id: string;
   title: string;
-  category: 'Certification' | 'Event' | 'Voucher' | 'Workshop' | 'Hackathon';
+  category: string;
   description: string;
   linkUrl: string;
   linkText: string;

@@ -34,11 +34,15 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onExitAdmin }) => {
   return (
     <div className="min-h-screen bg-[#06080d] text-zinc-100 flex flex-col justify-between selection:bg-aws-orange selection:text-black font-sans">
       
-      {/* Top Admin Topbar — cleaned up: no restricted-route badge, no subtitle clutter */}
+      {/* Top Admin Topbar */}
       <header className="w-full bg-zinc-950 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-950/80 border border-purple-500/40 flex items-center justify-center text-purple-400 font-bold">
-            <Lock className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-xl border border-purple-500/40 flex items-center justify-center overflow-hidden">
+            <img 
+              src="/images/aws.png" 
+              alt="AWS Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="text-base font-display font-bold text-white tracking-tight">
             AWSxCYNERGY PORTAL

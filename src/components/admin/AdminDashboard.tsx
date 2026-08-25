@@ -20,10 +20,6 @@ import {
 import { soundEngine } from '../../utils/soundEngine';
 import { BulkImportModal } from './BulkImportModal';
 
-// ── Shared style tokens ─────────────────────────────────────────────
-// Sleek minimalist dark-glass panels + clean sans-serif typography.
-// JetBrains Mono (font-stats) is reserved for small labels/codes/stats
-// only — never for headings or body copy.
 const CARD = 'bg-neutral-900/60 border border-neutral-800 rounded-xl shadow-2xl backdrop-blur-md';
 const INPUT = 'w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-3 py-2 text-sm font-sans text-white placeholder-neutral-500 focus:outline-none focus:border-aws-orange transition-colors';
 const LABEL = 'block text-[11px] font-stats tracking-wide uppercase text-neutral-400 mb-1.5';
@@ -58,6 +54,7 @@ export const AdminDashboard: React.FC = () => {
     addNewQuestion,
     editQuestion,
     deleteQuestion,
+    deleteAllQuestions,
     addNewAnnouncement, 
     editAnnouncement,
     deleteAnnouncement,
@@ -96,6 +93,7 @@ export const AdminDashboard: React.FC = () => {
   const [explanation, setExplanation] = useState(emptyQuestionForm.explanation);
   const [awsDocTopic, setAwsDocTopic] = useState(emptyQuestionForm.awsDocTopic);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
+  const [showDeleteAllQuestionsConfirm, setShowDeleteAllQuestionsConfirm] = useState(false);
 
   // ── Announcement form state (shared by add + edit) ─────────────────
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
@@ -228,6 +226,13 @@ export const AdminDashboard: React.FC = () => {
     flashSuccess();
   };
 
+  const handleConfirmDeleteAllQuestions = () => {
+    deleteAllQuestions();
+    resetQuestionForm();
+    setShowDeleteAllQuestionsConfirm(false);
+    flashSuccess();
+  };
+
   const handleLoadSampleQuestion = () => {
     soundEngine.playTap();
     setQuestionText('A media company needs to distribute low-latency video streaming content globally while preventing unauthorized downloads through geo-restrictions. Which AWS solution meets this requirement?');
@@ -290,10 +295,6 @@ export const AdminDashboard: React.FC = () => {
         isHot: true,
       });
     } else {
-      // Immediately reflected in the student portal's "Certs & Events"
-      // feed (EventsHub) and the top AnnouncementBar — both read this
-      // same shared context state, and it's persisted to localStorage
-      // so it survives a reload too.
       addNewAnnouncement({
         title: annTitle,
         category: finalCategory,
@@ -325,11 +326,9 @@ export const AdminDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-display font-bold text-white">
-              SPOC Administration Console
+              Administration Console
             </h1>
-            <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/30 text-[10px] font-stats font-bold uppercase tracking-wide">
-              Faculty/SPOC Only
-            </span>
+        
           </div>
           <p className="text-xs text-zinc-400 font-sans mt-1.5">
             Manage registered student accounts, master question banks, and weekly challenge sprints.
@@ -515,6 +514,54 @@ export const AdminDashboard: React.FC = () => {
                     <option value={2}>Year 2</option>
                     <option value={3}>Year 3</option>
                     <option value={4}>Year 4</option>
+                    <option value={5}>Year 5</option>
+                    <option value={6}>Year 6</option>
+                    <option value={7}>Year 7</option>
+                    <option value={8}>Year 8</option>
+                    <option value={9}>Year 9</option>
+                    <option value={10}>Year 10</option>
+                    <option value={11}>Year 11</option>
+                    <option value={12}>Year 12</option>
+                    <option value={13}>Year 13</option>
+                    <option value={14}>Year 14</option>
+                    <option value={15}>Year 15</option>
+                    <option value={16}>Year 16</option>
+                    <option value={17}>Year 17</option>
+                    <option value={18}>Year 18</option>
+                    <option value={19}>Year 19</option>
+                    <option value={20}>Year 20</option>
+                    <option value={21}>Year 21</option>
+                    <option value={22}>Year 22</option>
+                    <option value={23}>Year 23</option>
+                    <option value={24}>Year 24</option>
+                    <option value={25}>Year 25</option>
+                    <option value={26}>Year 26</option>
+                    <option value={27}>Year 27</option>
+                    <option value={28}>Year 28</option>
+                    <option value={29}>Year 29</option>
+                    <option value={30}>Year 30</option>
+                    <option value={31}>Year 31</option>
+                    <option value={32}>Year 32</option>
+                    <option value={33}>Year 33</option>
+                    <option value={34}>Year 34</option>
+                    <option value={35}>Year 35</option>
+                    <option value={36}>Year 36</option>
+                    <option value={37}>Year 37</option>
+                    <option value={38}>Year 38</option>
+                    <option value={39}>Year 39</option>
+                    <option value={40}>Year 40</option>
+                    <option value={41}>Year 41</option>
+                    <option value={42}>Year 42</option>
+                    <option value={43}>Year 43</option>
+                    <option value={44}>Year 44</option>
+                    <option value={45}>Year 45</option>
+                    <option value={46}>Year 46</option>
+                    <option value={47}>Year 47</option>
+                    <option value={48}>Year 48</option>
+                    <option value={49}>Year 49</option>
+                    <option value={50}>Year 50</option>
+                    <option value={51}>Year 51</option>
+                    <option value={52}>Year 52</option>
                   </select>
                 </div>
                 <div className="sm:col-span-5 flex items-end gap-3">
@@ -795,7 +842,19 @@ export const AdminDashboard: React.FC = () => {
           <div className={`${CARD} p-5`}>
             <h3 className="text-xs font-display font-bold text-white mb-3 flex items-center justify-between">
               <span>Master Question Bank</span>
-              <span className="text-aws-orange font-stats">{questions.length} Items</span>
+              <div className="flex items-center gap-2">
+                <span className="text-aws-orange font-stats">{questions.length} Items</span>
+                {questions.length > 0 && (
+                  <button
+                    onClick={() => setShowDeleteAllQuestionsConfirm(true)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 transition-colors text-[10px] font-bold"
+                    title="Delete all questions"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Delete All</span>
+                  </button>
+                )}
+              </div>
             </h3>
 
             <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
@@ -855,6 +914,35 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setQuestionToDelete(null)}
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete All Questions Confirmation */}
+          {showDeleteAllQuestionsConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
+              <div className="bg-neutral-900/95 border border-rose-500/40 rounded-xl p-6 max-w-sm w-full text-center shadow-2xl backdrop-blur-md">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-3">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-display font-bold text-white mb-1">Delete All Questions?</h3>
+                <p className="text-xs text-zinc-400 mb-6">
+                  This will permanently remove all <strong className="text-white">{questions.length}</strong> questions from the Master Question Bank across every week. This cannot be undone.
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleConfirmDeleteAllQuestions}
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                  >
+                    Yes, Delete All
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteAllQuestionsConfirm(false)}
                     className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
                   >
                     Cancel
