@@ -89,11 +89,20 @@ function calculateTier(points: number): BuildingTier {
 }
 
 function calculateFloors(points: number): number {
-  // Strict rule: floors = floor(score / 50). A brand-new account with
-  // 0–49 points has ZERO floors (an empty foundation-only plot in the
-  // 3D city) — the first floor is only granted upon reaching 50
+  // Strict rule: floors = floor(score / 100). A brand-new account with
+  // 0–99 points has ZERO floors (an empty foundation-only plot in the
+  // 3D city) — the first floor is only granted upon reaching 100
   // cumulative points. No artificial "+1 free floor" baseline.
-  return Math.max(0, Math.floor(points / 50));
+  //
+  // Raised from /50 to /100: at /50, a strong week (e.g. acing all 30
+  // weekly questions, ~2,000 points) alone produced ~40 floors, which
+  // over a semester of consistent top scores pushed buildings toward
+  // the point where their peaks started poking out of the top of the
+  // 3D city's frame at max zoom-out (see ThreeCityCanvas.tsx capacity
+  // notes). Halving the floor-earn rate here, combined with halving
+  // the per-floor render height there, roughly quadruples how many
+  // points a building can reach before that framing ceiling is hit.
+  return Math.max(0, Math.floor(points / 100));
 }
 
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

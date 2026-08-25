@@ -191,9 +191,10 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
     controls.minDistance = 15;
-    // Raised from 500 → 950 so the full expanded 20x20-plot skyline can
-    // be zoomed all the way out to and still fit in frame.
-    controls.maxDistance = 950;
+    // Raised from 500 → 950 → 1400 to keep pace with taller top-scorer
+    // buildings: each step widens how far the camera can pull back
+    // before the tallest towers' peaks poke above the top of frame.
+    controls.maxDistance = 1400;
     if (savedControlsTarget.current) {
       controls.target.copy(savedControlsTarget.current);
     } else {
@@ -371,7 +372,7 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       // before. Only the profile owner can ever flip their own flag.
       const buildingLightsOn = student.lightsOn !== false;
 
-      const buildingHeight = Math.max(8, student.floors * 3.2 + 4);
+      const buildingHeight = Math.max(8, student.floors * 1.8 + 4);
       const buildingWidth = isApex ? 13 : isCyber ? 11 : 9.5;
 
       const buildingGroup = new THREE.Group();
