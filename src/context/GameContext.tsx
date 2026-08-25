@@ -48,6 +48,11 @@ interface GameContextType {
   setLastAnswerResult: (result: GameContextType['lastAnswerResult']) => void;
   setActiveWeek: (week: number) => void;
   addNewQuestion: (question: Omit<Question, 'id'>) => void;
+  // Bulk variant used by the AI Bulk Question Importer's "Publish All
+  // Validated Questions" action — commits every staged draft to the
+  // Master Question Bank in a single state update (one persist + one
+  // re-render) instead of looping addNewQuestion per item.
+  addNewQuestions: (newQuestions: Omit<Question, 'id'>[]) => void;
   editQuestion: (question: Question) => void;
   deleteQuestion: (questionId: string) => void;
   addNewAnnouncement: (announcement: Omit<Announcement, 'id'>) => void;
@@ -498,6 +503,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setQuestions(prev => [newQ, ...prev]);
   };
 
+  // Used by the AI Bulk Question Importer to commit every admin-approved
+  // staged draft in one go after document parsing + review.
+  const addNewQuestions = useCallback((newQuestions: Omit<Question, 'id'>[]) => {
+    const stamped: Question[] = newQuestions.map((q, i) => ({
+      ...q,
+      id: `q_bulk_${Date.now()}_${i}`,
+    }));
+    setQuestions(prev => [...stamped, ...prev]);
+  }, []);
+
   // Overwrites an existing question in place (by id) — works for both
   // admin-added questions and the original seed bank, since the whole
   // list is persisted together now (see STORAGE_KEYS.QUESTIONS above).
@@ -603,6 +618,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLastAnswerResult,
         setActiveWeek,
         addNewQuestion,
+        addNewQuestions,
         editQuestion,
         deleteQuestion,
         addNewAnnouncement,

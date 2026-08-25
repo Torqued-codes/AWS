@@ -14,9 +14,11 @@ import {
   Pencil,
   X,
   UserPlus,
-  AlertTriangle
+  AlertTriangle,
+  FileUp
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
+import { BulkImportModal } from './BulkImportModal';
 
 // ── Shared style tokens ─────────────────────────────────────────────
 // Sleek minimalist dark-glass panels + clean sans-serif typography.
@@ -104,6 +106,10 @@ export const AdminDashboard: React.FC = () => {
   const [annLink, setAnnLink] = useState('');
   const [annLinkText, setAnnLinkText] = useState('Register Now');
   const [announcementToDelete, setAnnouncementToDelete] = useState<Announcement | null>(null);
+
+  // AI Bulk Question Importer (PDF/DOCX) — separate modal, keeps the
+  // manual question creation form below completely untouched.
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   const flashSuccess = () => {
     setShowSuccessToast(true);
@@ -319,9 +325,11 @@ export const AdminDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-display font-bold text-white">
-              Administration Console
+              SPOC Administration Console
             </h1>
-            
+            <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/30 text-[10px] font-stats font-bold uppercase tracking-wide">
+              Faculty/SPOC Only
+            </span>
           </div>
           <p className="text-xs text-zinc-400 font-sans mt-1.5">
             Manage registered student accounts, master question banks, and weekly challenge sprints.
@@ -641,6 +649,14 @@ export const AdminDashboard: React.FC = () => {
                 )}
                 <button
                   type="button"
+                  onClick={() => { soundEngine.playTap(); setShowBulkImport(true); }}
+                  className="text-[11px] font-sans font-semibold text-black bg-aws-orange hover:bg-amber-500 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                >
+                  <FileUp className="w-3 h-3" />
+                  <span>Bulk Import (PDF/DOCX)</span>
+                </button>
+                <button
+                  type="button"
                   onClick={handleLoadSampleQuestion}
                   className="text-[11px] font-sans font-semibold text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1"
                 >
@@ -663,6 +679,9 @@ export const AdminDashboard: React.FC = () => {
                     <option value={2}>Week 2</option>
                     <option value={3}>Week 3</option>
                     <option value={4}>Week 4</option>
+                    <option value={5}>Week 5</option>
+                    <option value={6}>Week 6</option>
+                    
                   </select>
                 </div>
 
@@ -1065,6 +1084,8 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      <BulkImportModal isOpen={showBulkImport} onClose={() => setShowBulkImport(false)} />
 
     </div>
   );

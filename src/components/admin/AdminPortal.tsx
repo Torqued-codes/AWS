@@ -65,13 +65,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onExitAdmin }) => {
             </div>
 
             <h1 className="text-xl font-display font-bold text-white mb-6">
-              SPOC Authentication Required
+              ADMIN Authentication Required
             </h1>
 
             <form onSubmit={handleUnlock} className="space-y-4 text-left">
               <div>
                 <label className="block text-[11px] font-stats tracking-wide uppercase font-semibold text-zinc-400 mb-1.5">
-                  SPOC Passkey
+                  ADMIN Passkey
                 </label>
                 <input
                   type="password"
@@ -109,7 +109,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onExitAdmin }) => {
 
       {/* Admin Footer */}
       <footer className="w-full bg-zinc-950 border-t border-zinc-800/80 py-4 px-6 text-center text-xs font-sans text-zinc-500">
-        AWSxCYNERGY Portal • SPOC Console
+        AWSxCYNERGY Portal • ADMIN Console
       </footer>
 
     </div>
