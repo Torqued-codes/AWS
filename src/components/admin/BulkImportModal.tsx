@@ -12,14 +12,16 @@ import {
 import {
   X,
   UploadCloud,
-  Sparkles,
+  ScanText,
   Loader2,
   Trash2,
   CheckCircle2,
   AlertTriangle,
-  FileText,
   KeyRound,
   Send,
+  ChevronDown,
+  ChevronRight,
+  ListChecks,
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 
@@ -67,7 +69,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   const [fileName, setFileName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [wasTruncated, setWasTruncated] = useState(false);
+  const [chunkProgress, setChunkProgress] = useState<{ current: number; total: number } | null>(null);
   const [staged, setStaged] = useState<EditableStaged[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [targetWeek, setTargetWeek] = useState(activeWeek);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -81,7 +85,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     setFileName('');
     setError(null);
     setWasTruncated(false);
+    setChunkProgress(null);
     setStaged([]);
+    setExpandedId(null);
     setShowSuccessToast(false);
   };
 
@@ -112,7 +118,10 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       }
 
       setPhase('parsing');
-      const { questions, wasTruncated: truncated } = await parseQuestionsWithGroq(text, { apiKey });
+      const { questions, wasTruncated: truncated } = await parseQuestionsWithGroq(text, {
+        apiKey,
+        onProgress: (current, total) => setChunkProgress(total > 1 ? { current, total } : null),
+      });
       setWasTruncated(truncated);
 
       if (questions.length === 0) {
@@ -129,6 +138,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       }));
 
       setStaged(editable);
+      setExpandedId(editable.find((q) => !isQuestionValid(q))?.stagingId ?? null);
       soundEngine.playFloorAdded();
       setPhase('review');
     } catch (err) {
@@ -196,11 +206,11 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-aws-orange/15 border border-aws-orange/40 flex items-center justify-center text-aws-orange">
-              <Sparkles className="w-4 h-4" />
+              <ScanText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-display font-bold text-white">AI Bulk Question Importer</h2>
-              <p className="text-[11px] text-zinc-500">Upload a PDF/DOCX study doc — Groq AI extracts MCQs for your review</p>
+              <h2 className="text-sm font-display font-bold text-white">Bulk Question Import</h2>
+              <p className="text-[11px] text-zinc-500">Turn a study guide into ready-to-publish MCQs, drafted for your review</p>
             </div>
           </div>
           <button onClick={handleClose} className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-neutral-800 transition-colors">
@@ -254,13 +264,28 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                 {phase === 'extracting' && (
                   <>
                     <Loader2 className="w-8 h-8 text-aws-orange animate-spin" />
-                    <p className="text-sm font-semibold text-white">Extracting text from {fileName}...</p>
+                    <p className="text-sm font-semibold text-white">Reading {fileName}...</p>
                   </>
                 )}
                 {phase === 'parsing' && (
                   <>
                     <Loader2 className="w-8 h-8 text-aws-orange animate-spin" />
-                    <p className="text-sm font-semibold text-white">Groq AI is parsing questions from {fileName}...</p>
+                    <p className="text-sm font-semibold text-white">
+                      {chunkProgress
+                        ? `Extracting questions — pass ${chunkProgress.current} of ${chunkProgress.total}`
+                        : 'Extracting questions...'}
+                    </p>
+                    {chunkProgress && chunkProgress.total > 1 && (
+                      <div className="w-48 h-1 rounded-full bg-neutral-800 overflow-hidden">
+                        <div
+                          className="h-full bg-aws-orange transition-all duration-300"
+                          style={{ width: `${(chunkProgress.current / chunkProgress.total) * 100}%` }}
+                        />
+                      </div>
+                    )}
+                    <p className="text-[11px] text-zinc-500">
+                      Long documents are read in multiple passes so nothing near the end gets skipped.
+                    </p>
                   </>
                 )}
                 <input
@@ -288,108 +313,138 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
-                  <FileText className="w-4 h-4 text-cyan-400" />
+                  <ListChecks className="w-4 h-4 text-aws-orange" />
                   <span>
-                    Parsed from <strong className="text-white">{fileName}</strong> — {staged.length} draft{staged.length !== 1 ? 's' : ''}, {validCount} valid
+                    <strong className="text-white">{fileName}</strong> — {staged.length} question{staged.length !== 1 ? 's' : ''} found, {validCount} ready to publish
                   </span>
                 </div>
                 {wasTruncated && (
                   <span className="text-[10px] px-2 py-1 rounded bg-amber-950/40 text-amber-300 border border-amber-500/30">
-                    Document truncated to first ~14,000 characters for this pass
+                    Document is unusually long — only the first section was scanned
                   </span>
                 )}
               </div>
 
-              <div className="space-y-3">
+              <div className="rounded-xl border border-neutral-800 divide-y divide-neutral-800 overflow-hidden">
                 {staged.map((q, idx) => {
                   const valid = isQuestionValid(q);
+                  const isOpen = expandedId === q.stagingId;
                   return (
-                    <div
-                      key={q.stagingId}
-                      className={`p-4 rounded-lg border ${valid ? 'border-neutral-800 bg-neutral-950/60' : 'border-rose-500/40 bg-rose-950/10'}`}
-                    >
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[11px] font-stats font-bold text-zinc-400">Draft #{idx + 1}</span>
-                        <div className="flex items-center gap-2">
-                          {!valid && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-stats font-bold">
-                              INCOMPLETE
-                            </span>
-                          )}
-                          <button
-                            onClick={() => removeStaged(q.stagingId)}
-                            className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 transition-colors"
-                            title="Remove this draft"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
+                    <div key={q.stagingId} className={!valid ? 'bg-rose-950/10' : 'bg-neutral-950/40'}>
+                      {/* Collapsed row */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isOpen ? null : q.stagingId)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-900/60 transition-colors"
+                      >
+                        {isOpen ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        )}
+                        <span className="w-6 h-6 rounded-md bg-neutral-800 text-zinc-400 font-stats text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="flex-1 text-xs text-zinc-200 truncate">
+                          {q.questionText.trim() || <span className="text-zinc-600 italic">Empty question text</span>}
+                        </span>
+                        <span className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-stats text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {q.correctKey}
+                        </span>
+                        {!valid && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-stats font-bold shrink-0">
+                            INCOMPLETE
+                          </span>
+                        )}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeStaged(q.stagingId);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              removeStaged(q.stagingId);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-zinc-600 hover:text-rose-400 hover:bg-rose-950/40 transition-colors shrink-0"
+                          title="Remove this question"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </span>
+                      </button>
 
-                      <textarea
-                        rows={2}
-                        value={q.questionText}
-                        onChange={(e) => updateStaged(q.stagingId, { questionText: e.target.value })}
-                        className={`${INPUT} mb-2.5 text-xs`}
-                        placeholder="Question text"
-                      />
+                      {/* Expanded editor */}
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1">
+                          <textarea
+                            rows={2}
+                            value={q.questionText}
+                            onChange={(e) => updateStaged(q.stagingId, { questionText: e.target.value })}
+                            className={`${INPUT} mb-2.5 text-xs`}
+                            placeholder="Question text"
+                          />
 
-                      <div className="space-y-1.5 mb-2.5">
-                        {q.options.map((opt) => (
-                          <div key={opt.key} className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => updateStaged(q.stagingId, { correctKey: opt.key })}
-                              className={`w-6 h-6 rounded-md font-stats font-bold text-[11px] flex items-center justify-center shrink-0 transition-all ${
-                                q.correctKey === opt.key ? 'bg-emerald-500 text-black' : 'bg-neutral-800 text-zinc-400 hover:text-white'
-                              }`}
-                              title="Mark as correct answer"
-                            >
-                              {opt.key}
-                            </button>
-                            <input
-                              type="text"
-                              value={opt.text}
-                              onChange={(e) => updateStagedOption(q.stagingId, opt.key, e.target.value)}
-                              className={`flex-1 ${INPUT} text-xs py-1.5`}
-                            />
+                          <div className="space-y-1.5 mb-2.5">
+                            {q.options.map((opt) => (
+                              <div key={opt.key} className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => updateStaged(q.stagingId, { correctKey: opt.key })}
+                                  className={`w-6 h-6 rounded-md font-stats font-bold text-[11px] flex items-center justify-center shrink-0 transition-all ${
+                                    q.correctKey === opt.key ? 'bg-emerald-500 text-black' : 'bg-neutral-800 text-zinc-400 hover:text-white'
+                                  }`}
+                                  title="Mark as correct answer"
+                                >
+                                  {opt.key}
+                                </button>
+                                <input
+                                  type="text"
+                                  value={opt.text}
+                                  onChange={(e) => updateStagedOption(q.stagingId, opt.key, e.target.value)}
+                                  className={`flex-1 ${INPUT} text-xs py-1.5`}
+                                />
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
 
-                      <textarea
-                        rows={1}
-                        value={q.explanation}
-                        onChange={(e) => updateStaged(q.stagingId, { explanation: e.target.value })}
-                        className={`${INPUT} mb-2.5 text-xs`}
-                        placeholder="Explanation"
-                      />
+                          <textarea
+                            rows={1}
+                            value={q.explanation}
+                            onChange={(e) => updateStaged(q.stagingId, { explanation: e.target.value })}
+                            className={`${INPUT} mb-2.5 text-xs`}
+                            placeholder="Explanation"
+                          />
 
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <select
-                          value={q.mappedDomain}
-                          onChange={(e) => updateStaged(q.stagingId, { mappedDomain: e.target.value as CertDomain })}
-                          className={`${INPUT} text-xs py-1.5`}
-                        >
-                          <option value="IAM & Security">IAM & Security</option>
-                          <option value="Compute (EC2 & Lambda)">Compute (EC2 & Lambda)</option>
-                          <option value="Storage (S3 & EBS)">Storage (S3 & EBS)</option>
-                          <option value="VPC & Networking">VPC & Networking</option>
-                          <option value="Databases (RDS & DynamoDB)">Databases (RDS & DynamoDB)</option>
-                          <option value="Cloud Architecture & Cost">Cloud Architecture & Cost</option>
-                        </select>
-                        <select
-                          value={q.mappedDifficulty}
-                          onChange={(e) =>
-                            updateStaged(q.stagingId, { mappedDifficulty: e.target.value as 'Beginner' | 'Associate' | 'Pro' })
-                          }
-                          className={`${INPUT} text-xs py-1.5`}
-                        >
-                          <option value="Beginner">Beginner</option>
-                          <option value="Associate">Associate</option>
-                          <option value="Pro">Pro</option>
-                        </select>
-                      </div>
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <select
+                              value={q.mappedDomain}
+                              onChange={(e) => updateStaged(q.stagingId, { mappedDomain: e.target.value as CertDomain })}
+                              className={`${INPUT} text-xs py-1.5`}
+                            >
+                              <option value="IAM & Security">IAM & Security</option>
+                              <option value="Compute (EC2 & Lambda)">Compute (EC2 & Lambda)</option>
+                              <option value="Storage (S3 & EBS)">Storage (S3 & EBS)</option>
+                              <option value="VPC & Networking">VPC & Networking</option>
+                              <option value="Databases (RDS & DynamoDB)">Databases (RDS & DynamoDB)</option>
+                              <option value="Cloud Architecture & Cost">Cloud Architecture & Cost</option>
+                            </select>
+                            <select
+                              value={q.mappedDifficulty}
+                              onChange={(e) =>
+                                updateStaged(q.stagingId, { mappedDifficulty: e.target.value as 'Beginner' | 'Associate' | 'Pro' })
+                              }
+                              className={`${INPUT} text-xs py-1.5`}
+                            >
+                              <option value="Beginner">Beginner</option>
+                              <option value="Associate">Associate</option>
+                              <option value="Pro">Pro</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

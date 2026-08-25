@@ -31,12 +31,50 @@ export interface StagedQuestion {
 // `/chat_completions` (with an underscore) is not a valid Groq route and
 // would 404 — corrected here so the integration actually works.
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// llama-3.3-70b-versatile was deprecated by Groq (announced June 2026).
+// openai/gpt-oss-120b is the recommended general-purpose replacement.
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
-// Rough client-side cap so a single request stays comfortably inside the
-// model's context window. Longer documents are truncated with a notice
-// surfaced back to the admin in the importer UI.
-const MAX_INPUT_CHARS = 14000;
+// Per-request character budget, sized to stay comfortably inside the
+// model's context window for one chunk. Documents longer than this are
+// NOT silently cut off — see splitIntoChunks() below — they're split into
+// multiple sequential requests so every question in the source doc still
+// gets sent to Groq, just across more than one call.
+const CHUNK_CHARS = 12000;
+
+// Safety ceiling on how many chunks a single upload will fire off, so one
+// enormous document can't rack up a huge number of free-tier API calls.
+// 8 chunks × 12,000 chars covers roughly a 90-page study guide, which is
+// far beyond what this importer is meant for.
+const MAX_CHUNKS = 8;
+
+/**
+ * Splits raw extracted document text into request-sized chunks, preferring
+ * to break on a blank line (paragraph/question boundary) near the target
+ * size rather than mid-sentence, so a question stem is less likely to be
+ * severed across two chunks.
+ */
+function splitIntoChunks(text: string, maxChars: number): string[] {
+  if (text.length <= maxChars) return [text];
+
+  const chunks: string[] = [];
+  let start = 0;
+
+  while (start < text.length) {
+    let end = Math.min(start + maxChars, text.length);
+
+    if (end < text.length) {
+      const searchFrom = start + Math.floor(maxChars * 0.6);
+      const breakPoint = text.lastIndexOf('\n\n', end);
+      if (breakPoint > searchFrom) end = breakPoint;
+    }
+
+    chunks.push(text.slice(start, end));
+    start = end;
+  }
+
+  return chunks;
+}
 
 const LOCAL_STORAGE_OVERRIDE_KEY = 'aws_cc_groq_api_key_override';
 
@@ -47,7 +85,13 @@ const LOCAL_STORAGE_OVERRIDE_KEY = 'aws_cc_groq_api_key_override';
  * admin typed into the in-app fallback field, if any.
  */
 export function getGroqApiKey(): string {
-  const envKey = (import.meta as any)?.env?.VITE_GROQ_API_KEY as string | undefined;
+  // NOTE: this must stay the plain, unwrapped `import.meta.env.X` shape.
+  // Vite/esbuild replaces env vars via a static textual match on exactly
+  // that pattern at build time — wrapping it in optional chaining, an
+  // `as any` cast, or an intermediate variable (e.g. `(import.meta as any)
+  // ?.env?.VITE_GROQ_API_KEY`) breaks the match, so it silently falls back
+  // to a runtime property lookup that is never populated in production.
+  const envKey = import.meta.env.VITE_GROQ_API_KEY;
   if (envKey && envKey.trim()) return envKey.trim();
 
   try {
@@ -59,7 +103,7 @@ export function getGroqApiKey(): string {
 
 /** True if the key came from .env rather than the in-app fallback field. */
 export function isGroqApiKeyFromEnv(): boolean {
-  const envKey = (import.meta as any)?.env?.VITE_GROQ_API_KEY as string | undefined;
+  const envKey = import.meta.env.VITE_GROQ_API_KEY;
   return !!(envKey && envKey.trim());
 }
 
@@ -119,25 +163,18 @@ Rules:
 interface GroqParseOptions {
   apiKey: string;
   signal?: AbortSignal;
+  /** Called before each chunk request fires, 1-indexed, e.g. (2, 3). */
+  onProgress?: (chunkIndex: number, totalChunks: number) => void;
 }
 
-/**
- * Sends extracted document text to Groq and returns parsed staged
- * question drafts. Throws with a human-readable message on any failure
- * (missing key, network error, bad JSON, non-2xx response, etc.) so the
- * calling UI can surface it directly.
- */
-export async function parseQuestionsWithGroq(
-  rawText: string,
-  { apiKey, signal }: GroqParseOptions
-): Promise<{ questions: StagedQuestion[]; wasTruncated: boolean }> {
-  if (!apiKey || !apiKey.trim()) {
-    throw new Error('No Groq API key configured. Add VITE_GROQ_API_KEY to your .env file, or enter a key in the fallback field below.');
-  }
-
-  const wasTruncated = rawText.length > MAX_INPUT_CHARS;
-  const inputText = wasTruncated ? rawText.slice(0, MAX_INPUT_CHARS) : rawText;
-
+/** Sends one chunk of text to Groq and returns its parsed questions.
+ * stagingIdOffset keeps client-side ids unique across chunks. */
+async function parseChunk(
+  inputText: string,
+  apiKey: string,
+  signal: AbortSignal | undefined,
+  stagingIdOffset: number
+): Promise<StagedQuestion[]> {
   let response: Response;
   try {
     response = await fetch(GROQ_ENDPOINT, {
@@ -187,7 +224,7 @@ export async function parseQuestionsWithGroq(
 
   const rawQuestions = Array.isArray(parsed.questions) ? parsed.questions : [];
 
-  const questions: StagedQuestion[] = rawQuestions
+  return rawQuestions
     .map((q: any, idx: number): StagedQuestion | null => {
       if (!q || typeof q.questionText !== 'string' || !Array.isArray(q.options)) return null;
 
@@ -199,7 +236,7 @@ export async function parseQuestionsWithGroq(
       const correctKey: 'A' | 'B' | 'C' | 'D' = ['A', 'B', 'C', 'D'].includes(q.correctKey) ? q.correctKey : 'A';
 
       return {
-        stagingId: `stage_${Date.now()}_${idx}`,
+        stagingId: `stage_${stagingIdOffset + idx}`,
         questionText: q.questionText,
         options,
         correctKey,
@@ -209,6 +246,36 @@ export async function parseQuestionsWithGroq(
       };
     })
     .filter((q: StagedQuestion | null): q is StagedQuestion => q !== null);
+}
 
-  return { questions, wasTruncated };
+/**
+ * Sends extracted document text to Groq and returns parsed staged
+ * question drafts. Long documents are split into multiple sequential
+ * requests (see splitIntoChunks) rather than being cut off, so every
+ * question in the source doc is still sent for extraction — only a
+ * document beyond MAX_CHUNKS × CHUNK_CHARS hits the hard safety ceiling
+ * and gets flagged as truncated. Throws with a human-readable message on
+ * any failure (missing key, network error, bad JSON, non-2xx response,
+ * etc.) so the calling UI can surface it directly.
+ */
+export async function parseQuestionsWithGroq(
+  rawText: string,
+  { apiKey, signal, onProgress }: GroqParseOptions
+): Promise<{ questions: StagedQuestion[]; wasTruncated: boolean; chunkCount: number }> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error('No Groq API key configured. Add VITE_GROQ_API_KEY to your .env file, or enter a key in the fallback field below.');
+  }
+
+  const allChunks = splitIntoChunks(rawText, CHUNK_CHARS);
+  const wasTruncated = allChunks.length > MAX_CHUNKS;
+  const chunks = wasTruncated ? allChunks.slice(0, MAX_CHUNKS) : allChunks;
+
+  const questions: StagedQuestion[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    onProgress?.(i + 1, chunks.length);
+    const chunkQuestions = await parseChunk(chunks[i], apiKey, signal, questions.length);
+    questions.push(...chunkQuestions);
+  }
+
+  return { questions, wasTruncated, chunkCount: chunks.length };
 }
