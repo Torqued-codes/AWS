@@ -18,11 +18,15 @@ import { soundEngine } from '../../utils/soundEngine';
 
 interface CertificateModalProps {
   student: Student | null;
+  periodLabel?: string;
+  rank?: number;
   onClose: () => void;
 }
 
 export const CertificateModal: React.FC<CertificateModalProps> = ({
   student,
+  periodLabel,
+  rank,
   onClose
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,10 +43,21 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
 
     const hash = generateVerificationHash(student.rollNumber, dateStr);
 
-    let rankTitle = 'Cloud Practitioner Achiever';
-    if (student.points >= 1000) rankTitle = 'Apex Cloud Champion (#1 Tier)';
-    else if (student.points >= 500) rankTitle = 'Solutions Architect Elite';
-    else if (student.points >= 250) rankTitle = 'VPC & Serverless Pioneer';
+    // When opened for a specific announced win (the normal path now,
+    // via a badge in the profile/building modal), the certificate names
+    // that exact period and rank instead of a generic points-based tier
+    // — it's a record of a specific announced result, not a live
+    // standing snapshot.
+    let rankTitle: string;
+    if (periodLabel !== undefined && rank !== undefined) {
+      const rankSuffix = rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
+      rankTitle = `${periodLabel} — ${rank}${rankSuffix} Place`;
+    } else {
+      rankTitle = 'Cloud Practitioner Achiever';
+      if (student.points >= 1000) rankTitle = 'Apex Cloud Champion (#1 Tier)';
+      else if (student.points >= 500) rankTitle = 'Solutions Architect Elite';
+      else if (student.points >= 250) rankTitle = 'VPC & Serverless Pioneer';
+    }
 
     drawCertificateToCanvas(canvasRef.current, {
       student,
@@ -51,14 +66,15 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
       dateString: dateStr,
       verificationHash: hash
     });
-  }, [student]);
+  }, [student, periodLabel, rank]);
 
   if (!student) return null;
 
   const handleDownload = () => {
     soundEngine.playFloorAdded();
     if (canvasRef.current) {
-      downloadCertificateAsImage(canvasRef.current, `AWS_Certificate_${student.rollNumber}_${student.name.replace(/\s+/g, '_')}`);
+      const periodSuffix = periodLabel !== undefined ? `_${periodLabel.replace(/\s+/g, '_')}` : '';
+      downloadCertificateAsImage(canvasRef.current, `AWS_Certificate_${student.rollNumber}_${student.name.replace(/\s+/g, '_')}${periodSuffix}`);
     }
   };
 
@@ -98,6 +114,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Verified student credential for <strong className="text-white">{student.name}</strong> ({student.rollNumber})
+            {periodLabel !== undefined && <> — <span className="text-aws-orange font-semibold">{periodLabel} Winner</span></>}
           </p>
         </div>
 

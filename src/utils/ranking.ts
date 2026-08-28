@@ -71,16 +71,22 @@ export function getRank(
   return idx === -1 ? Infinity : idx + 1;
 }
 
-/** True if the student is Top-5 on either the weekly or monthly board. */
+/**
+ * True if the student is Top-5 on either the weekly or monthly board
+ * RIGHT NOW. Kept for the admin Winners panel's "use current live Top 5"
+ * suggestion shortcut only — this is deliberately NOT what gates
+ * certificate access anymore (see `isCertEligible` in GameContext.tsx,
+ * which checks admin-announced winners instead).
+ */
 export function isTopFive(students: Student[], studentId: string): boolean {
   return getRank(students, studentId, 'weekly') <= 5 || getRank(students, studentId, 'monthly') <= 5;
 }
 
 /**
- * Certificate eligibility rule used across the app:
- * the viewer must own the profile AND that profile must be Top-5
- * (weekly or monthly) for the "Generate Official Certificate" action
- * to be visible/usable.
+ * @deprecated Superseded by `isCertEligible` in GameContext.tsx, which
+ * gates on admin-announced weekly winners rather than live standings.
+ * Kept only so any lingering reference doesn't hard-break; not called
+ * anywhere in the app.
  */
 export function canGenerateCertificate(
   students: Student[],

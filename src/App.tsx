@@ -27,9 +27,22 @@ const MainAppContent: React.FC = () => {
     dismissPrivacyNotice,
     isAuthenticated,
     loginAsUser,
+    weeklyWinners: weeklyWinnersRaw,
+    monthlyWinners: monthlyWinnersRaw,
+    yearlyWinners: yearlyWinnersRaw,
   } = useGame();
+  // Defensive fallback: never let a missing/mismatched context value
+  // crash certificate resolution — same reasoning as ProfileDrawer/BuildingModal.
+  const weeklyWinners = weeklyWinnersRaw || {};
+  const monthlyWinners = monthlyWinnersRaw || {};
+  const yearlyWinners = yearlyWinnersRaw || {};
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [certStudent, setCertStudent] = useState<Student | null>(null);
+  const [certTarget, setCertTarget] = useState<{
+    student: Student;
+    periodType?: 'weekly' | 'monthly' | 'yearly';
+    periodLabel?: string;
+    rank?: number;
+  } | null>(null);
   const [isAdminRoute, setIsAdminRoute] = useState<boolean>(() => {
     return window.location.pathname.includes('/admin') || window.location.search.includes('portal=admin');
   });
@@ -44,8 +57,67 @@ const MainAppContent: React.FC = () => {
     return () => window.removeEventListener('popstate', checkRoute);
   }, []);
 
-  const handleOpenCertificate = (student: Student) => {
-    setCertStudent(student);
+  // Resolves which announced period to show by default when a caller
+  // (leaderboard row, 3D city building card) opens a certificate without
+  // specifying one — prefers the "biggest" honor first (yearly, then
+  // monthly, then the most recent week), so the quick-access buttons
+  // always surface a student's best available certificate.
+  const resolveDefaultPeriod = (student: Student): { type: 'weekly' | 'monthly' | 'yearly'; key: string; rank: number } | null => {
+    const yearlyEntries = Object.entries(yearlyWinners).filter(([, ids]) => ids.includes(student.id));
+    if (yearlyEntries.length > 0) {
+      const [key, ids] = yearlyEntries[yearlyEntries.length - 1];
+      return { type: 'yearly', key, rank: ids.indexOf(student.id) + 1 };
+    }
+    const monthlyEntries = Object.entries(monthlyWinners).filter(([, ids]) => ids.includes(student.id));
+    if (monthlyEntries.length > 0) {
+      const [key, ids] = monthlyEntries[monthlyEntries.length - 1];
+      return { type: 'monthly', key, rank: ids.indexOf(student.id) + 1 };
+    }
+    const weeklyEntries = Object.entries(weeklyWinners)
+      .filter(([, ids]) => ids.includes(student.id))
+      .sort((a, b) => Number(a[0]) - Number(b[0]));
+    if (weeklyEntries.length > 0) {
+      const [key, ids] = weeklyEntries[weeklyEntries.length - 1];
+      return { type: 'weekly', key, rank: ids.indexOf(student.id) + 1 };
+    }
+    return null;
+  };
+
+  // `periodType`/`periodKey` are optional so existing "quick access" cert
+  // buttons (leaderboard row, 3D city building card) keep working with
+  // zero changes — when omitted, this falls back to the student's best
+  // available announced win. The per-period badge list in ProfileDrawer/
+  // BuildingModal passes both explicitly so each certificate matches the
+  // exact badge the student clicked.
+  const handleOpenCertificate = (
+    student: Student,
+    periodType?: 'weekly' | 'monthly' | 'yearly',
+    periodKey?: string
+  ) => {
+    if (periodType && periodKey !== undefined) {
+      const map: Record<string, string[]> = periodType === 'weekly' ? weeklyWinners : periodType === 'monthly' ? monthlyWinners : yearlyWinners;
+      const ids = map[periodKey];
+      const rank = ids ? ids.indexOf(student.id) + 1 : undefined;
+      setCertTarget({
+        student,
+        periodType,
+        periodLabel: periodType === 'weekly' ? `Week ${periodKey}` : periodKey,
+        rank: rank && rank > 0 ? rank : undefined,
+      });
+      return;
+    }
+
+    const resolved = resolveDefaultPeriod(student);
+    if (resolved) {
+      setCertTarget({
+        student,
+        periodType: resolved.type,
+        periodLabel: resolved.type === 'weekly' ? `Week ${resolved.key}` : resolved.key,
+        rank: resolved.rank,
+      });
+    } else {
+      setCertTarget({ student });
+    }
   };
 
   const handleExitAdmin = () => {
@@ -100,17 +172,19 @@ const MainAppContent: React.FC = () => {
       </main>
 
       {/* Global Modals & Drawers */}
-      {certStudent && (
+      {certTarget && (
         <CertificateModal
-          student={certStudent}
-          onClose={() => setCertStudent(null)}
+          student={certTarget.student}
+          periodLabel={certTarget.periodLabel}
+          rank={certTarget.rank}
+          onClose={() => setCertTarget(null)}
         />
       )}
 
       <ProfileDrawer
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
-        onOpenCertificate={() => handleOpenCertificate(currentUser)}
+        onOpenCertificate={(periodType, periodKey) => handleOpenCertificate(currentUser, periodType, periodKey)}
       />
 
       {/* Global student profile/building modal — works from any tab

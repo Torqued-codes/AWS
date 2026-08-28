@@ -10,7 +10,13 @@ export const STORAGE_KEYS = {
   // broadcasts persist across reloads, same as everything else.
   ANNOUNCEMENTS: 'aws_cloud_city_announcements',
   MUTED: 'aws_cloud_city_muted',
-  ACTIVE_WEEK: 'aws_cloud_city_active_week'
+  ACTIVE_WEEK: 'aws_cloud_city_active_week',
+  // Maps week number -> ordered array of up to 5 student IDs (rank 1
+  // first), only ever set by an explicit admin "Announce Winners"
+  // action. A week's absence from this map means it hasn't been
+  // announced yet — that's what gates certificate access, independent
+  // of the live/still-moving leaderboard standings.
+  WEEKLY_WINNERS: 'aws_cloud_city_weekly_winners'
 };
 
 export function loadFromStorage<T>(key: string, defaultValue: T): T {

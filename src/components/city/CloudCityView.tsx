@@ -5,7 +5,7 @@ import { CityHUDOverlay } from './CityHUDOverlay';
 import { Department, Student } from '../../types';
 
 interface CloudCityViewProps {
-  onOpenCertificate: (student: Student) => void;
+  onOpenCertificate: (student: Student, periodType?: 'weekly' | 'monthly' | 'yearly', periodKey?: string) => void;
 }
 
 export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate }) => {

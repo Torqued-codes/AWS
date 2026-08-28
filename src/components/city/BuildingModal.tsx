@@ -17,7 +17,7 @@ import { soundEngine } from '../../utils/soundEngine';
 interface BuildingModalProps {
   student: Student | null;
   onClose: () => void;
-  onOpenCertificate: (student: Student) => void;
+  onOpenCertificate: (student: Student, periodType?: 'weekly' | 'monthly' | 'yearly', periodKey?: string) => void;
 }
 
 export const BuildingModal: React.FC<BuildingModalProps> = ({
@@ -25,12 +25,41 @@ export const BuildingModal: React.FC<BuildingModalProps> = ({
   onClose,
   onOpenCertificate
 }) => {
-  const { currentUser, badges, isCertEligible } = useGame();
+  const {
+    currentUser, badges, isCertEligible,
+    weeklyWinners: weeklyWinnersRaw, monthlyWinners: monthlyWinnersRaw, yearlyWinners: yearlyWinnersRaw
+  } = useGame();
+  // Defensive fallback: same reasoning as ProfileDrawer — never let a
+  // missing/mismatched context value crash this modal.
+  const weeklyWinners = weeklyWinnersRaw || {};
+  const monthlyWinners = monthlyWinnersRaw || {};
+  const yearlyWinners = yearlyWinnersRaw || {};
 
   if (!student) return null;
 
   const isCurrent = student.id === currentUser.id;
   const eligibleForCert = isCertEligible(student.id);
+
+  // Every announced period (weekly/monthly/yearly) THIS profile's student
+  // appears in the Top-5 for — same source of truth as the self-profile
+  // drawer, shown here too since it's public achievement info (like the
+  // skill badges list below), regardless of who's viewing.
+  const wonPeriods = [
+    ...Object.entries(weeklyWinners).map(([key, ids]) => ({
+      type: 'weekly' as const, key, label: `Week ${key}`, rank: ids.indexOf(student.id) + 1, ids
+    })),
+    ...Object.entries(monthlyWinners).map(([key, ids]) => ({
+      type: 'monthly' as const, key, label: key, rank: ids.indexOf(student.id) + 1, ids
+    })),
+    ...Object.entries(yearlyWinners).map(([key, ids]) => ({
+      type: 'yearly' as const, key, label: key, rank: ids.indexOf(student.id) + 1, ids
+    })),
+  ]
+    .filter(p => p.ids.includes(student.id))
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'weekly' ? -1 : b.type === 'weekly' ? 1 : a.type === 'monthly' ? -1 : 1;
+      return a.type === 'weekly' ? Number(b.key) - Number(a.key) : b.key.localeCompare(a.key);
+    });
 
   const getTierLabel = (tier: string) => {
     switch (tier) {
@@ -154,9 +183,51 @@ export const BuildingModal: React.FC<BuildingModalProps> = ({
           </div>
         </div>
 
+        {/* Winner Badges — one per announced period (weekly/monthly/
+            yearly) this student won. Visible to any viewer, same as the
+            skill badges above; only the profile owner can click through
+            to a certificate — peers just see the badge itself. */}
+        {wonPeriods.length > 0 && (
+          <div className="mb-6">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-2.5">
+              WINNER BADGES ({wonPeriods.length})
+            </div>
+            <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
+              {wonPeriods.map(({ type, key, label, rank }) => {
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏅';
+                const content = (
+                  <>
+                    <span>{medal}</span>
+                    <span>{label} · #{rank}</span>
+                  </>
+                );
+                return isCurrent ? (
+                  <button
+                    key={`${type}-${key}`}
+                    onClick={() => { soundEngine.playTap(); onOpenCertificate(student, type, key); }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors"
+                    title="View certificate"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div
+                    key={`${type}-${key}`}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300"
+                  >
+                    {content}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Actions — "Generate Official Certificate" is strictly limited to
-            the profile owner AND only while they hold a Top-5 rank
-            (weekly or monthly). Viewing peers never see this action. */}
+            the profile owner AND only once the admin has announced them as
+            a Top-5 winner for some period. Viewing peers never see this
+            action; if the owner has multiple wins, this opens their best
+            available one — the badges above open a specific one instead. */}
         <div className="flex items-center gap-2">
           {isCurrent && eligibleForCert && (
             <button
@@ -174,7 +245,7 @@ export const BuildingModal: React.FC<BuildingModalProps> = ({
           {isCurrent && !eligibleForCert && (
             <div className="flex-1 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 font-mono text-[11px] flex items-center justify-center gap-2 text-center px-2">
               <Lock className="w-3.5 h-3.5 shrink-0" />
-              <span>Certificate unlocks at Top 5 (weekly or monthly)</span>
+              <span>Unlocks once the admin announces a period's Top 5</span>
             </div>
           )}
 

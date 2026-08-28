@@ -72,6 +72,30 @@ interface GameContextType {
   trackActiveDay: () => void;
   toggleBuildingLights: () => void;
   isCertEligible: (studentId: string) => boolean;
+  // Admin-announced Top-5 winners, keyed by week number. A week only
+  // appears here once the admin has explicitly locked it in — this is
+  // what certificate access is actually gated on now, NOT the live,
+  // still-moving leaderboard standings.
+  weeklyWinners: Record<number, string[]>;
+  // Admin-only: locks in the Top-5 (ordered rank 1→5) for a given week
+  // and instantly reflects it to every user's portal (shared context
+  // state, persisted to localStorage). Calling this again for the same
+  // week overwrites the previous announcement — lets the admin correct
+  // a mistake without needing a separate "unannounce" step.
+  announceWeeklyWinners: (week: number, studentIds: string[]) => void;
+  // Admin-only: reverts a week back to "not yet announced" — hides the
+  // certificate button again for anyone who only qualified via that
+  // week's announcement.
+  revokeWeeklyWinners: (week: number) => void;
+  // Same idea as the weekly map above, but keyed by an admin-typed free
+  // text label ("August 2026", "2026") since months/years don't have a
+  // single numeric identifier the way weeks do in this app.
+  monthlyWinners: Record<string, string[]>;
+  announceMonthlyWinners: (periodLabel: string, studentIds: string[]) => void;
+  revokeMonthlyWinners: (periodLabel: string) => void;
+  yearlyWinners: Record<string, string[]>;
+  announceYearlyWinners: (periodLabel: string, studentIds: string[]) => void;
+  revokeYearlyWinners: (periodLabel: string) => void;
   // Admin-only: resets EVERY registered student's hearts to full (5/5),
   // writing the change straight to the persisted student list in
   // localStorage — distinct from `refillHearts`, which only refills the
@@ -137,6 +161,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [badges] = useState<Badge[]>(INITIAL_BADGES);
   const [activeWeek, setActiveWeekState] = useState<number>(() => 
     loadFromStorage<number>(STORAGE_KEYS.ACTIVE_WEEK, 1)
+  );
+  // Admin-announced Top-5 winners per week — absent key = not announced
+  // yet. Kept separate from `activeWeek` since an admin may announce a
+  // past week's winners after moving on to the next week's questions.
+  const [weeklyWinners, setWeeklyWinners] = useState<Record<number, string[]>>(() =>
+    loadFromStorage<Record<number, string[]>>(STORAGE_KEYS.WEEKLY_WINNERS, {})
+  );
+  const [monthlyWinners, setMonthlyWinners] = useState<Record<string, string[]>>(() =>
+    loadFromStorage<Record<string, string[]>>(STORAGE_KEYS.MONTHLY_WINNERS, {})
+  );
+  const [yearlyWinners, setYearlyWinners] = useState<Record<string, string[]>>(() =>
+    loadFromStorage<Record<string, string[]>>(STORAGE_KEYS.YEARLY_WINNERS, {})
   );
   const [isMuted, setIsMuted] = useState<boolean>(() => 
     loadFromStorage<boolean>(STORAGE_KEYS.MUTED, false)
@@ -207,6 +243,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.ANNOUNCEMENTS, announcements);
   }, [announcements]);
+
+  // Persist admin-announced weekly winners — this is what certificate
+  // access is gated on, so it needs to survive a reload just like
+  // everything else the admin publishes.
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.WEEKLY_WINNERS, weeklyWinners);
+  }, [weeklyWinners]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.MONTHLY_WINNERS, monthlyWinners);
+  }, [monthlyWinners]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.YEARLY_WINNERS, yearlyWinners);
+  }, [yearlyWinners]);
 
   // Handle Heart Refill Timer
   useEffect(() => {
@@ -596,25 +647,64 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     )
   ), [currentUser, studentList]);
 
-  // Weekly / monthly (all-time) rankings, used to gate certificate access
-  // to only the current top-5 performers. "Monthly" reuses the same
-  // all-time point totals as `allStudents` since that's the full-history
-  // metric; weekly uses each student's rolling weeklyPoints — both run
-  // through the same cascading tie-breaker.
-  const weeklyRanked = useMemo(() => (
-    sortStudents(allStudents, 'weekly')
-  ), [allStudents]);
-  const monthlyRanked = allStudents; // already sorted by all-time points
 
-  // A student may only generate/download a certificate for themselves,
-  // and only while they hold a Top-5 spot on either the weekly or the
-  // monthly/all-time leaderboard.
+  // Certificate access used to be computed live off the still-moving
+  // leaderboard (Top-5 right now), which meant a student sitting in
+  // 1st place mid-week could already download a "winner" certificate
+  // before the week was even over. It's now gated purely on whether an
+  // admin has explicitly announced that student as a Top-5 winner for
+  // at least one week — the live standings no longer matter here at all.
   const isCertEligible = useCallback((studentId: string): boolean => {
     if (studentId !== currentUser.id) return false;
-    const weeklyIdx = weeklyRanked.findIndex(s => s.id === studentId);
-    const monthlyIdx = monthlyRanked.findIndex(s => s.id === studentId);
-    return (weeklyIdx >= 0 && weeklyIdx < 5) || (monthlyIdx >= 0 && monthlyIdx < 5);
-  }, [currentUser.id, weeklyRanked, monthlyRanked]);
+    return (
+      Object.values(weeklyWinners).some((ids) => ids.includes(studentId)) ||
+      Object.values(monthlyWinners).some((ids) => ids.includes(studentId)) ||
+      Object.values(yearlyWinners).some((ids) => ids.includes(studentId))
+    );
+  }, [currentUser.id, weeklyWinners, monthlyWinners, yearlyWinners]);
+
+  const announceWeeklyWinners = useCallback((week: number, studentIds: string[]) => {
+    setWeeklyWinners(prev => ({ ...prev, [week]: studentIds.slice(0, 5) }));
+  }, []);
+
+  const revokeWeeklyWinners = useCallback((week: number) => {
+    setWeeklyWinners(prev => {
+      if (!(week in prev)) return prev;
+      const next = { ...prev };
+      delete next[week];
+      return next;
+    });
+  }, []);
+
+  const announceMonthlyWinners = useCallback((periodLabel: string, studentIds: string[]) => {
+    const key = periodLabel.trim();
+    if (!key) return;
+    setMonthlyWinners(prev => ({ ...prev, [key]: studentIds.slice(0, 5) }));
+  }, []);
+
+  const revokeMonthlyWinners = useCallback((periodLabel: string) => {
+    setMonthlyWinners(prev => {
+      if (!(periodLabel in prev)) return prev;
+      const next = { ...prev };
+      delete next[periodLabel];
+      return next;
+    });
+  }, []);
+
+  const announceYearlyWinners = useCallback((periodLabel: string, studentIds: string[]) => {
+    const key = periodLabel.trim();
+    if (!key) return;
+    setYearlyWinners(prev => ({ ...prev, [key]: studentIds.slice(0, 5) }));
+  }, []);
+
+  const revokeYearlyWinners = useCallback((periodLabel: string) => {
+    setYearlyWinners(prev => {
+      if (!(periodLabel in prev)) return prev;
+      const next = { ...prev };
+      delete next[periodLabel];
+      return next;
+    });
+  }, []);
 
   return (
     <GameContext.Provider
@@ -661,6 +751,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         trackActiveDay,
         toggleBuildingLights,
         isCertEligible,
+        weeklyWinners,
+        announceWeeklyWinners,
+        revokeWeeklyWinners,
+        monthlyWinners,
+        announceMonthlyWinners,
+        revokeMonthlyWinners,
+        yearlyWinners,
+        announceYearlyWinners,
+        revokeYearlyWinners,
       }}
     >
       {children}

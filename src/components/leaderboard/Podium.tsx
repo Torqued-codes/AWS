@@ -6,7 +6,7 @@ import { soundEngine } from '../../utils/soundEngine';
 interface PodiumProps {
   topThree: Student[];
   onSelectStudent: (student: Student) => void;
-  onOpenCertificate: (student: Student) => void;
+  onOpenCertificate: (student: Student, periodType?: 'weekly' | 'monthly' | 'yearly', periodKey?: string) => void;
 }
 
 export const Podium: React.FC<PodiumProps> = ({

@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 import { Department, Gender, DEPARTMENTS } from '../../types';
-import { isTopFive } from '../../utils/ranking';
 
 const GENDERS: Gender[] = ['Male', 'Female', 'Other'];
 const AVATAR_STYLES = ['bottts', 'adventurer', 'shapes', 'identicon', 'thumbs', 'rings'];
@@ -29,7 +28,7 @@ function generateAvatarUrl(seed: string, style: string): string {
 interface ProfileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenCertificate: () => void;
+  onOpenCertificate: (periodType?: 'weekly' | 'monthly' | 'yearly', periodKey?: string) => void;
 }
 
 export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
@@ -37,7 +36,16 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   onClose,
   onOpenCertificate
 }) => {
-  const { currentUser, badges, submissions, updateUserProfile, logoutUser, isCertEligible } = useGame();
+  const {
+    currentUser, badges, submissions, updateUserProfile, logoutUser,
+    weeklyWinners: weeklyWinnersRaw, monthlyWinners: monthlyWinnersRaw, yearlyWinners: yearlyWinnersRaw
+  } = useGame();
+  // Defensive fallback: if an older/mismatched GameContext build doesn't
+  // provide these yet, default to empty maps instead of crashing the
+  // whole profile drawer on Object.entries(undefined).
+  const weeklyWinners = weeklyWinnersRaw || {};
+  const monthlyWinners = monthlyWinnersRaw || {};
+  const yearlyWinners = yearlyWinnersRaw || {};
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(currentUser.name);
@@ -53,6 +61,28 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const totalAnswered = submissions.length;
   const correctCount = submissions.filter(s => s.isCorrect).length;
   const accuracy = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : 100;
+
+  // Every announced period (weekly/monthly/yearly) this student appears
+  // in the Top-5 for — powers the Winner Badges & Certificates section
+  // below. Weekly periods sort newest-week-first; monthly/yearly use
+  // free-text admin labels so they're grouped after weeks, in the order
+  // the admin announced them.
+  const wonPeriods = [
+    ...Object.entries(weeklyWinners).map(([key, ids]) => ({
+      type: 'weekly' as const, key, label: `Week ${key}`, rank: ids.indexOf(currentUser.id) + 1, ids
+    })),
+    ...Object.entries(monthlyWinners).map(([key, ids]) => ({
+      type: 'monthly' as const, key, label: key, rank: ids.indexOf(currentUser.id) + 1, ids
+    })),
+    ...Object.entries(yearlyWinners).map(([key, ids]) => ({
+      type: 'yearly' as const, key, label: key, rank: ids.indexOf(currentUser.id) + 1, ids
+    })),
+  ]
+    .filter(p => p.ids.includes(currentUser.id))
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'weekly' ? -1 : b.type === 'weekly' ? 1 : a.type === 'monthly' ? -1 : 1;
+      return a.type === 'weekly' ? Number(b.key) - Number(a.key) : b.key.localeCompare(a.key);
+    });
 
   const handleSave = () => {
     const trimmedRoll = editRoll.trim().toUpperCase();
@@ -353,29 +383,62 @@ export const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                 })}
               </div>
             </div>
+            {/* Winner Badges & Certificates — one entry per announced
+                period (weekly/monthly/yearly) this student appears in
+                the Top-5 for. Distinct from the skill-based Badges
+                above: these are earned exclusively through admin
+                announcement, never by live standings alone. */}
+            <div className="mb-4">
+              <div className="text-xs font-mono font-bold text-zinc-400 mb-3 flex items-center justify-between">
+                <span>Winner Badges &amp; Certificates</span>
+                <span className="text-aws-orange">{wonPeriods.length}</span>
+              </div>
+
+              {wonPeriods.length === 0 ? (
+                <div className="p-3.5 rounded-xl border border-dashed border-zinc-800 text-center text-[11px] text-zinc-500 flex items-center justify-center gap-2">
+                  <Lock className="w-3.5 h-3.5 shrink-0" />
+                  <span>No winner badges yet — these unlock once the admin announces a period's Top 5.</span>
+                </div>
+              ) : (
+                <div className="space-y-2 text-xs">
+                  {wonPeriods.map(({ type, key, label, rank }) => {
+                    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '🏅';
+                    return (
+                      <div
+                        key={`${type}-${key}`}
+                        className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-lg shrink-0">{medal}</span>
+                          <div className="min-w-0">
+                            <div className="font-mono font-bold text-white text-[12px] flex items-center gap-1.5">
+                              <span>{label} Champion</span>
+                              <span className="text-[9px] uppercase tracking-wide text-cyan-400 font-bold">{type}</span>
+                            </div>
+                            <div className="text-[11px] text-amber-300/90 font-sans">Rank #{rank}</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            soundEngine.playTap();
+                            onOpenCertificate(type, key);
+                            onClose();
+                          }}
+                          className="shrink-0 px-2.5 py-1.5 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-mono font-bold text-[10px] flex items-center gap-1 transition-all"
+                        >
+                          <Award className="w-3 h-3" />
+                          <span>Cert</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Action */}
           <div className="pt-4 border-t border-zinc-800 space-y-2">
-            {isCertEligible(currentUser.id) ? (
-              <button
-                onClick={() => {
-                  soundEngine.playTap();
-                  onOpenCertificate();
-                  onClose();
-                }}
-                className="w-full py-3 rounded-xl bg-aws-orange hover:bg-amber-500 text-zinc-950 font-display font-bold text-sm flex items-center justify-center gap-2 transition-all"
-              >
-                <Award className="w-4 h-4" />
-                <span>View & Download Certificate</span>
-              </button>
-            ) : (
-              <div className="w-full py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-500 font-mono text-xs flex items-center justify-center gap-2 text-center px-3">
-                <Lock className="w-3.5 h-3.5 shrink-0" />
-                <span>Certificates unlock at Top 5 (weekly or monthly)</span>
-              </div>
-            )}
-
             <button
               onClick={() => { soundEngine.playTap(); logoutUser(); }}
               className="w-full py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-rose-400 font-mono text-xs flex items-center justify-center gap-1.5 transition-all"

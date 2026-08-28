@@ -225,9 +225,9 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
 
                     <td className="py-3 px-4 text-center">
                       {/* "Generate Official Certificate" is only ever shown
-                          to the profile owner, and only once they hold a
-                          Top-5 spot (weekly or monthly). Peers viewing this
-                          row never see the action. */}
+                          to the profile owner, and only once the admin has
+                          announced them as a Top-5 winner for some week.
+                          Peers viewing this row never see the action. */}
                       {isCurrent && isCertEligible(student.id) ? (
                         <button
                           onClick={() => {

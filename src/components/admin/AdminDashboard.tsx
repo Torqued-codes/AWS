@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useGame } from '../../context/GameContext';
 import { CertDomain, Student, Question, Announcement, Department, Gender, DEPARTMENTS } from '../../types';
 import { 
@@ -15,10 +15,14 @@ import {
   X,
   UserPlus,
   AlertTriangle,
-  FileUp
+  FileUp,
+  Trophy,
+  Megaphone,
+  Undo2
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 import { BulkImportModal } from './BulkImportModal';
+import { sortStudents } from '../../utils/ranking';
 
 const CARD = 'bg-neutral-900/60 border border-neutral-800 rounded-xl shadow-2xl backdrop-blur-md';
 const INPUT = 'w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-3 py-2 text-sm font-sans text-white placeholder-neutral-500 focus:outline-none focus:border-aws-orange transition-colors';
@@ -63,9 +67,18 @@ export const AdminDashboard: React.FC = () => {
     removeStudent,
     addNewStudent,
     refillAllHearts,
+    weeklyWinners,
+    announceWeeklyWinners,
+    revokeWeeklyWinners,
+    monthlyWinners,
+    announceMonthlyWinners,
+    revokeMonthlyWinners,
+    yearlyWinners,
+    announceYearlyWinners,
+    revokeYearlyWinners,
   } = useGame();
 
-  const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'questions' | 'announcements' | 'settings'>('students');
+  const [activeAdminTab, setActiveAdminTab] = useState<'students' | 'questions' | 'announcements' | 'winners' | 'settings'>('students');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentDeptFilter, setStudentDeptFilter] = useState<Department | 'ALL'>('ALL');
@@ -109,9 +122,94 @@ export const AdminDashboard: React.FC = () => {
   // manual question creation form below completely untouched.
   const [showBulkImport, setShowBulkImport] = useState(false);
 
+  // ── Winner Announcement state (Weekly / Monthly / Yearly) ───────────
+  const [winnerPeriodType, setWinnerPeriodType] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+  // Weekly uses a numeric key; monthly/yearly use free-text admin labels
+  // ("August 2026", "2026") since there's no automatic month/year
+  // rollover tracked anywhere else in the app.
+  const [winnerPeriodKey, setWinnerPeriodKey] = useState<string>(String(activeWeek));
+  const [winnerSelection, setWinnerSelection] = useState<string[]>([]);
+  const [winnerSearch, setWinnerSearch] = useState('');
+  const [periodToRevoke, setPeriodToRevoke] = useState<{ type: 'weekly' | 'monthly' | 'yearly'; key: string } | null>(null);
+  const announcePanelRef = useRef<HTMLDivElement>(null);
+
+  const getWinnersForPeriod = (type: 'weekly' | 'monthly' | 'yearly', key: string): string[] | undefined => {
+    if (type === 'weekly') return weeklyWinners[Number(key)];
+    if (type === 'monthly') return monthlyWinners[key];
+    return yearlyWinners[key];
+  };
+
   const flashSuccess = () => {
     setShowSuccessToast(true);
     setTimeout(() => setShowSuccessToast(false), 2500);
+  };
+
+  // Live weekly standings, used only to suggest a starting Top-5 —
+  // announcing still requires an explicit admin action below, so a
+  // student's live rank alone never unlocks anything on its own.
+  const suggestedWeeklyTop5 = sortStudents(students, 'weekly').slice(0, 5);
+
+  const winnerSearchResults = students.filter(s => {
+    const q = winnerSearch.trim().toLowerCase();
+    if (!q) return false;
+    return s.name.toLowerCase().includes(q) || s.rollNumber.toLowerCase().includes(q);
+  }).slice(0, 8);
+
+  const toggleWinnerSelection = (studentId: string) => {
+    setWinnerSelection(prev => {
+      if (prev.includes(studentId)) return prev.filter(id => id !== studentId);
+      if (prev.length >= 5) return prev;
+      return [...prev, studentId];
+    });
+  };
+
+  const moveWinnerRank = (index: number, direction: -1 | 1) => {
+    setWinnerSelection(prev => {
+      const next = [...prev];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const handleUseSuggestedTop5 = () => {
+    soundEngine.playTap();
+    setWinnerSelection(suggestedWeeklyTop5.map(s => s.id));
+  };
+
+  const handleSwitchPeriodType = (type: 'weekly' | 'monthly' | 'yearly') => {
+    soundEngine.playTap();
+    setWinnerPeriodType(type);
+    setWinnerPeriodKey(type === 'weekly' ? String(activeWeek) : '');
+    setWinnerSelection([]);
+  };
+
+  const handleLoadPeriodForEditing = (type: 'weekly' | 'monthly' | 'yearly', key: string) => {
+    soundEngine.playTap();
+    setWinnerPeriodType(type);
+    setWinnerPeriodKey(key);
+    setWinnerSelection(getWinnersForPeriod(type, key) || []);
+    announcePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleAnnounceWinners = () => {
+    const key = winnerPeriodKey.trim();
+    if (winnerSelection.length === 0 || !key) return;
+    if (winnerPeriodType === 'weekly') announceWeeklyWinners(Number(key) || 1, winnerSelection);
+    else if (winnerPeriodType === 'monthly') announceMonthlyWinners(key, winnerSelection);
+    else announceYearlyWinners(key, winnerSelection);
+    flashSuccess();
+  };
+
+  const handleConfirmRevoke = () => {
+    if (!periodToRevoke) return;
+    if (periodToRevoke.type === 'weekly') revokeWeeklyWinners(Number(periodToRevoke.key));
+    else if (periodToRevoke.type === 'monthly') revokeMonthlyWinners(periodToRevoke.key);
+    else revokeYearlyWinners(periodToRevoke.key);
+    if (winnerPeriodType === periodToRevoke.type && winnerPeriodKey === periodToRevoke.key) setWinnerSelection([]);
+    setPeriodToRevoke(null);
+    flashSuccess();
   };
 
   const filteredStudents = students.filter(s => {
@@ -393,6 +491,18 @@ export const AdminDashboard: React.FC = () => {
         >
           <Radio className="w-4 h-4" />
           <span>Broadcast Events ({announcements.length})</span>
+        </button>
+
+        <button
+          onClick={() => { soundEngine.playTap(); setActiveAdminTab('winners'); }}
+          className={`px-4 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeAdminTab === 'winners'
+              ? 'bg-aws-orange text-black font-bold'
+              : 'text-zinc-400 hover:text-white hover:bg-neutral-900'
+          }`}
+        >
+          <Trophy className="w-4 h-4" />
+          <span>Weekly Winners ({Object.keys(weeklyWinners).length})</span>
         </button>
 
         <button
@@ -1120,6 +1230,263 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setAnnouncementToDelete(null)}
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 4: Weekly Winners */}
+      {activeAdminTab === 'winners' && (
+        <div className="space-y-6 font-sans">
+          <div ref={announcePanelRef} className={`${CARD} p-5`}>
+            <div className="mb-4">
+              <h2 className="text-sm font-display font-bold text-white flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-aws-orange" />
+                Announce Winners
+              </h2>
+              <p className="text-[11px] text-zinc-400 mt-1 max-w-md">
+                Students can only view/download a certificate once you announce them here —
+                live leaderboard position alone no longer unlocks it. This goes out to every
+                student's portal the moment you announce.
+              </p>
+            </div>
+
+            {/* Period type toggle */}
+            <div className="flex items-center gap-1.5 mb-4 p-1 bg-neutral-950/60 border border-neutral-800 rounded-lg w-fit">
+              {(['weekly', 'monthly', 'yearly'] as const).map(type => (
+                <button
+                  key={type}
+                  onClick={() => handleSwitchPeriodType(type)}
+                  className={`px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-all ${
+                    winnerPeriodType === type
+                      ? 'bg-aws-orange text-black'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-4">
+              <label className={LABEL}>
+                {winnerPeriodType === 'weekly' ? 'Week Number' : winnerPeriodType === 'monthly' ? 'Month Label' : 'Year Label'}
+              </label>
+              {winnerPeriodType === 'weekly' ? (
+                <input
+                  type="number"
+                  min={1}
+                  value={winnerPeriodKey}
+                  onChange={(e) => setWinnerPeriodKey(e.target.value)}
+                  className={`${INPUT} w-32`}
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={winnerPeriodKey}
+                  onChange={(e) => setWinnerPeriodKey(e.target.value)}
+                  placeholder={winnerPeriodType === 'monthly' ? 'e.g. August 2026' : 'e.g. 2026'}
+                  className={`${INPUT} w-full max-w-xs`}
+                />
+              )}
+            </div>
+
+            {winnerPeriodKey.trim() && getWinnersForPeriod(winnerPeriodType, winnerPeriodKey.trim()) && (
+              <div className="mb-4 p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                <span>This period already has announced winners. Adjust the selection below and re-announce to update it.</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mb-2">
+              <span className={LABEL}>Selected Winners (rank order, max 5)</span>
+              {winnerPeriodType === 'weekly' && (
+                <button
+                  onClick={handleUseSuggestedTop5}
+                  className="text-[11px] font-semibold text-cyan-300 hover:text-cyan-200 flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  Use current live Top 5
+                </button>
+              )}
+            </div>
+
+            {winnerSelection.length === 0 ? (
+              <div className="p-4 rounded-lg border border-dashed border-neutral-800 text-center text-[11px] text-zinc-500 mb-4">
+                No students selected yet. Search below{winnerPeriodType === 'weekly' ? ' or use the live Top 5 shortcut' : ''}.
+              </div>
+            ) : (
+              <div className="space-y-1.5 mb-4">
+                {winnerSelection.map((id, idx) => {
+                  const s = students.find(st => st.id === id);
+                  if (!s) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950/60 border border-neutral-800">
+                      <span className="w-6 h-6 rounded-full bg-aws-orange/15 text-aws-orange border border-aws-orange/30 flex items-center justify-center font-stats font-bold text-[11px] shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white font-semibold text-xs truncate">{s.name}</div>
+                        <div className="text-[10px] text-zinc-500 font-stats">{s.rollNumber} · {s.weeklyPoints ?? s.points} pts</div>
+                      </div>
+                      <button
+                        onClick={() => moveWinnerRank(idx, -1)}
+                        disabled={idx === 0}
+                        className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed px-1"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => moveWinnerRank(idx, 1)}
+                        disabled={idx === winnerSelection.length - 1}
+                        className="text-zinc-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed px-1"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => toggleWinnerSelection(id)}
+                        className="text-rose-400 hover:text-rose-300 px-1"
+                        title="Remove"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="relative mb-4">
+              <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={winnerSearch}
+                onChange={(e) => setWinnerSearch(e.target.value)}
+                placeholder="Search by name or roll number to add a student..."
+                className={`${INPUT} pl-9`}
+              />
+              {winnerSearchResults.length > 0 && (
+                <div className="mt-1.5 border border-neutral-800 rounded-lg overflow-hidden divide-y divide-neutral-800">
+                  {winnerSearchResults.map(s => {
+                    const alreadyIn = winnerSelection.includes(s.id);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => { toggleWinnerSelection(s.id); setWinnerSearch(''); }}
+                        disabled={!alreadyIn && winnerSelection.length >= 5}
+                        className="w-full text-left px-3 py-2 bg-neutral-950/80 hover:bg-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between gap-2"
+                      >
+                        <span className="text-xs text-white">{s.name} <span className="text-zinc-500 font-stats">({s.rollNumber})</span></span>
+                        {alreadyIn && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleAnnounceWinners}
+              disabled={winnerSelection.length === 0 || !winnerPeriodKey.trim()}
+              className="w-full cyber-btn-primary py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Megaphone className="w-4 h-4" />
+              <span>
+                Announce {winnerPeriodType === 'weekly' ? `Week ${winnerPeriodKey || '—'}` : winnerPeriodKey.trim() || '—'} Winners
+                {winnerPeriodKey.trim() && getWinnersForPeriod(winnerPeriodType, winnerPeriodKey.trim()) ? ' (Update)' : ''}
+              </span>
+            </button>
+          </div>
+
+          {/* Announced periods list — all three types together */}
+          <div className={`${CARD} p-5`}>
+            <h3 className="text-xs font-display font-bold text-white mb-3">Announced Periods</h3>
+            {Object.keys(weeklyWinners).length === 0 && Object.keys(monthlyWinners).length === 0 && Object.keys(yearlyWinners).length === 0 ? (
+              <p className="text-[11px] text-zinc-500">No periods announced yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {([
+                  ...Object.entries(weeklyWinners).map(([key, ids]) => ({ type: 'weekly' as const, key, label: `Week ${key}`, ids })),
+                  ...Object.entries(monthlyWinners).map(([key, ids]) => ({ type: 'monthly' as const, key, label: key, ids })),
+                  ...Object.entries(yearlyWinners).map(([key, ids]) => ({ type: 'yearly' as const, key, label: key, ids })),
+                ]).map(({ type, key, label, ids }) => {
+                  const isBeingEdited = winnerPeriodType === type && winnerPeriodKey.trim() === key;
+                  return (
+                    <div
+                      key={`${type}-${key}`}
+                      className={`p-3 rounded-lg bg-neutral-950/60 border flex items-center justify-between gap-3 flex-wrap ${
+                        isBeingEdited ? 'border-aws-orange/60' : 'border-neutral-800'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-white font-semibold text-xs mb-1 flex items-center gap-2">
+                          <span className="uppercase text-[9px] tracking-wide text-cyan-400 font-bold">{type}</span>
+                          <span>{label}</span>
+                          {isBeingEdited && (
+                            <span className="text-[9px] uppercase tracking-wide text-aws-orange font-bold">Editing above ↑</span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-zinc-400">
+                          {ids.map((id, i) => {
+                            const s = students.find(st => st.id === id);
+                            return s ? `${i + 1}. ${s.name}` : null;
+                          }).filter(Boolean).join('  ·  ')}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleLoadPeriodForEditing(type, key)}
+                          className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-[11px] font-semibold flex items-center gap-1.5"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setPeriodToRevoke({ type, key })}
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 text-[11px] font-semibold flex items-center gap-1.5"
+                        >
+                          <Undo2 className="w-3 h-3" />
+                          Revoke
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Revoke Confirmation */}
+          {periodToRevoke !== null && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
+              <div className="bg-neutral-900/95 border border-rose-500/40 rounded-xl p-6 max-w-sm w-full text-center shadow-2xl backdrop-blur-md">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-3">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-display font-bold text-white mb-1 capitalize">
+                  Revoke {periodToRevoke.type === 'weekly' ? `Week ${periodToRevoke.key}` : periodToRevoke.key} Winners?
+                </h3>
+                <p className="text-xs text-zinc-400 mb-6">
+                  Students who only qualified for a certificate through this announcement will
+                  immediately lose access to it. This can be re-announced later if needed.
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleConfirmRevoke}
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                  >
+                    Yes, Revoke
+                  </button>
+                  <button
+                    onClick={() => setPeriodToRevoke(null)}
                     className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
                   >
                     Cancel
