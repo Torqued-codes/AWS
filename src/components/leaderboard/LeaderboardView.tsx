@@ -15,7 +15,7 @@ import { soundEngine } from '../../utils/soundEngine';
 import { sortStudents } from '../../utils/ranking';
 
 interface LeaderboardViewProps {
-  onOpenCertificate: (student: Student) => void;
+  onOpenCertificate: (student: Student, periodType?: 'weekly' | 'monthly' | 'yearly', periodKey?: string) => void;
   onSelectStudent: (student: Student) => void;
 }
 

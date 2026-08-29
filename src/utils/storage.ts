@@ -16,7 +16,9 @@ export const STORAGE_KEYS = {
   // action. A week's absence from this map means it hasn't been
   // announced yet — that's what gates certificate access, independent
   // of the live/still-moving leaderboard standings.
-  WEEKLY_WINNERS: 'aws_cloud_city_weekly_winners'
+  WEEKLY_WINNERS: 'aws_cloud_city_weekly_winners',
+  MONTHLY_WINNERS: 'aws_cloud_city_monthly_winners',
+  YEARLY_WINNERS: 'aws_cloud_city_yearly_winners'
 };
 
 export function loadFromStorage<T>(key: string, defaultValue: T): T {
