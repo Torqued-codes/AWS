@@ -13,6 +13,7 @@ interface ThreeCityCanvasProps {
   onSelectStudent: (student: Student) => void;
   targetStudentId: string | null;
   navEvent?: { dir: string; t: number } | null;
+  is360View?: boolean;
 }
 
 export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
@@ -21,6 +22,7 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
   onSelectStudent,
   targetStudentId,
   navEvent,
+  is360View = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { currentUser, toggleBuildingLights } = useGame();
@@ -189,6 +191,8 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.autoRotate = is360View;
+    controls.autoRotateSpeed = 0.55;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
     controls.minDistance = 15;
     // Raised from 500 → 950 → 1400 to keep pace with taller top-scorer
@@ -694,6 +698,15 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
       renderer.dispose();
     };
   }, [students, currentUser.id, skyTheme, onSelectStudent, flyToStudent, teleportToPoint, toggleBuildingLights]);
+
+  // 360° showcase mode uses the existing OrbitControls camera. It is an
+  // additive presentation mode: manual drag/zoom, teleporting, D-pad
+  // navigation and every existing building interaction remain unchanged.
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    controlsRef.current.autoRotate = is360View;
+    controlsRef.current.autoRotateSpeed = 0.55;
+  }, [is360View]);
 
   useEffect(() => {
     if (targetStudentId) {

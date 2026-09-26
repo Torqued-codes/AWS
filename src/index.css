@@ -3,24 +3,60 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    background: #030914;
+  }
+
   body {
-    @apply bg-[#06080d] text-zinc-100 antialiased overflow-x-hidden;
+    @apply bg-[#030914] text-slate-100 antialiased overflow-x-hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Custom Clean Scrollbar */
+  button,
+  input {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
   }
+
   ::-webkit-scrollbar-track {
-    background: #090c14;
+    background: #050b14;
   }
+
   ::-webkit-scrollbar-thumb {
-    background: #27272a;
-    border-radius: 3px;
+    background: #1f3040;
+    border-radius: 999px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
-    background: #FF9900;
+    background: #ff9900;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hud-glass {
+    background: rgba(7, 19, 33, 0.86);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .hud-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 }

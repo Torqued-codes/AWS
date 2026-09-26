@@ -16,6 +16,7 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
   const [targetStudentId, setTargetStudentId] = useState<string | null>(null);
   // Arrow D-pad navigation event trigger
   const [navEvent, setNavEvent] = useState<{ dir: string; t: number } | null>(null);
+  const [is360View, setIs360View] = useState(false);
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -57,6 +58,7 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
         onSelectStudent={selectStudentForModal}
         targetStudentId={targetStudentId}
         navEvent={navEvent}
+        is360View={is360View}
       />
 
       <CityHUDOverlay
@@ -71,6 +73,8 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
         onFlyToMyTower={handleFlyToMyTower}
         onStartQuiz={() => setActiveTab('quiz')}
         onNavigate={handleNavigate}
+        is360View={is360View}
+        onToggle360={() => setIs360View((value) => !value)}
       />
 
       {/* Building/profile modal now renders globally from App.tsx so the
