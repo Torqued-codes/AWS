@@ -13,7 +13,9 @@ interface ThreeCityCanvasProps {
   onSelectStudent: (student: Student) => void;
   targetStudentId: string | null;
   navEvent?: { dir: string; t: number } | null;
-  is360View?: boolean;
+  joystickVector?: { x: number; y: number };
+  mapPoint?: { x: number; z: number; t: number } | null;
+  onCameraPositionChange?: (position: { x: number; z: number }) => void;
 }
 
 export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
@@ -22,7 +24,9 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
   onSelectStudent,
   targetStudentId,
   navEvent,
-  is360View = false,
+  joystickVector = { x: 0, y: 0 },
+  mapPoint = null,
+  onCameraPositionChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { currentUser, toggleBuildingLights } = useGame();
@@ -45,6 +49,8 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
   // Camera animation targets
   const cameraTargetPos = useRef<THREE.Vector3 | null>(null);
   const controlsTargetPos = useRef<THREE.Vector3 | null>(null);
+  const joystickVectorRef = useRef({ x: 0, y: 0 });
+  const lastCameraReport = useRef(0);
 
   // Persists the camera's position/orbit-target ACROSS scene rebuilds.
   // The main effect below rebuilds the entire Three.js scene whenever
@@ -191,8 +197,6 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.autoRotate = is360View;
-    controls.autoRotateSpeed = 0.55;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
     controls.minDistance = 15;
     // Raised from 500 → 950 → 1400 to keep pace with taller top-scorer
@@ -656,7 +660,29 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
         }
       }
 
+      // Continuous analog joystick navigation. The HUD supplies a normalized
+      // vector (-1..1), so diagonal movement is naturally supported and the
+      // camera keeps moving for as long as the knob is held off-center.
+      const joystick = joystickVectorRef.current;
+      if ((joystick.x !== 0 || joystick.y !== 0) && cameraRef.current && controlsRef.current) {
+        const forward = new THREE.Vector3();
+        cameraRef.current.getWorldDirection(forward);
+        forward.y = 0;
+        if (forward.lengthSq() > 0) forward.normalize();
+        const right = new THREE.Vector3().crossVectors(forward, cameraRef.current.up).normalize();
+        const speed = 0.75;
+        const movement = new THREE.Vector3()
+          .addScaledVector(right, joystick.x * speed)
+          .addScaledVector(forward, -joystick.y * speed);
+        cameraRef.current.position.add(movement);
+        controlsRef.current.target.add(movement);
+      }
+
       controls.update();
+      if (onCameraPositionChange && t - lastCameraReport.current > 0.12) {
+        lastCameraReport.current = t;
+        onCameraPositionChange({ x: camera.position.x, z: camera.position.z });
+      }
       renderer.render(scene, camera);
     };
     animate();
@@ -699,20 +725,24 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
     };
   }, [students, currentUser.id, skyTheme, onSelectStudent, flyToStudent, teleportToPoint, toggleBuildingLights]);
 
-  // 360° showcase mode uses the existing OrbitControls camera. It is an
-  // additive presentation mode: manual drag/zoom, teleporting, D-pad
-  // navigation and every existing building interaction remain unchanged.
   useEffect(() => {
-    if (!controlsRef.current) return;
-    controlsRef.current.autoRotate = is360View;
-    controlsRef.current.autoRotateSpeed = 0.55;
-  }, [is360View]);
+    joystickVectorRef.current = joystickVector;
+    if (joystickVector.x !== 0 || joystickVector.y !== 0) {
+      cameraTargetPos.current = null;
+      controlsTargetPos.current = null;
+    }
+  }, [joystickVector]);
 
   useEffect(() => {
     if (targetStudentId) {
       flyToStudent(targetStudentId);
     }
   }, [targetStudentId, flyToStudent]);
+
+  useEffect(() => {
+    if (!mapPoint) return;
+    teleportToPoint(new THREE.Vector3(mapPoint.x, 0, mapPoint.z));
+  }, [mapPoint, teleportToPoint]);
 
   // ── On-screen D-Pad Navigation ──────────────────────────────────────────
   // Consumes `navEvent` fired by the HUD's arrow buttons and pans/rotates/
@@ -768,6 +798,10 @@ export const ThreeCityCanvas: React.FC<ThreeCityCanvasProps> = ({
         }
         break;
       }
+      case 'autoorbit':
+        controls.autoRotate = !controls.autoRotate;
+        controls.autoRotateSpeed = 0.55;
+        break;
       case 'zoomout': {
         const offset = camera.position.clone().sub(controls.target).multiplyScalar(1 / ZOOM_STEP);
         const newDist = offset.length();

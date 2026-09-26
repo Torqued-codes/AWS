@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useGame } from '../../context/GameContext';
 import { ThreeCityCanvas } from './ThreeCityCanvas';
 import { CityHUDOverlay } from './CityHUDOverlay';
@@ -16,7 +16,9 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
   const [targetStudentId, setTargetStudentId] = useState<string | null>(null);
   // Arrow D-pad navigation event trigger
   const [navEvent, setNavEvent] = useState<{ dir: string; t: number } | null>(null);
-  const [is360View, setIs360View] = useState(false);
+  const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 });
+  const [mapPoint, setMapPoint] = useState<{ x: number; z: number; t: number } | null>(null);
+  const [cameraPosition, setCameraPosition] = useState({ x: 0, z: 0 });
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -43,9 +45,17 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
     setSelectedStudentModal(currentUser); // own profile always visible to self
   };
 
-  const handleNavigate = (direction: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout') => {
+  const handleNavigate = useCallback((direction: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout' | 'autoorbit') => {
     setNavEvent({ dir: direction, t: Date.now() });
-  };
+  }, []);
+
+  const handleMapSelect = useCallback((x: number, z: number) => {
+    setMapPoint({ x, z, t: Date.now() });
+  }, []);
+
+  const handleCameraPositionChange = useCallback((position: { x: number; z: number }) => {
+    setCameraPosition(position);
+  }, []);
 
   return (
     <div className="relative w-full h-[calc(100vh-80px)] min-h-[580px] bg-[#07090e] overflow-hidden flex flex-col">
@@ -58,7 +68,9 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
         onSelectStudent={selectStudentForModal}
         targetStudentId={targetStudentId}
         navEvent={navEvent}
-        is360View={is360View}
+        joystickVector={joystickVector}
+        mapPoint={mapPoint}
+        onCameraPositionChange={handleCameraPositionChange}
       />
 
       <CityHUDOverlay
@@ -73,8 +85,9 @@ export const CloudCityView: React.FC<CloudCityViewProps> = ({ onOpenCertificate 
         onFlyToMyTower={handleFlyToMyTower}
         onStartQuiz={() => setActiveTab('quiz')}
         onNavigate={handleNavigate}
-        is360View={is360View}
-        onToggle360={() => setIs360View((value) => !value)}
+        onJoystickChange={setJoystickVector}
+        onMapSelect={handleMapSelect}
+        cameraPosition={cameraPosition}
       />
 
       {/* Building/profile modal now renders globally from App.tsx so the

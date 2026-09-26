@@ -1,28 +1,9 @@
-import React from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Department, Student } from '../../types';
 import {
-  Search,
-  MapPin,
-  Sun,
-  Moon,
-  Sunset,
-  Zap,
-  MousePointer2,
-  Move,
-  Navigation,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
-  Crosshair,
-  Layers3,
-  Trophy,
-  Flame,
-  Compass,
-  Radio,
+  Search, MapPin, Sun, Moon, Sunset, Zap, MousePointer2, Move, Navigation,
+  ZoomIn, ZoomOut, Rotate3D, Target, Trophy, Flame, ChevronRight,
+  GraduationCap, Crosshair, Map as MapIcon, Compass, Users, Building2
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 
@@ -37,10 +18,32 @@ interface CityHUDOverlayProps {
   onSkyThemeChange: (theme: 'midnight' | 'sunset' | 'bright') => void;
   onFlyToMyTower: () => void;
   onStartQuiz: () => void;
-  onNavigate: (direction: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout') => void;
-  is360View?: boolean;
-  onToggle360?: () => void;
+  onNavigate: (direction: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout' | 'autoorbit') => void;
+  onJoystickChange?: (vector: { x: number; y: number }) => void;
+  onMapSelect?: (x: number, z: number) => void;
+  cameraPosition?: { x: number; z: number };
 }
+
+const WORLD_SIZE = 740;
+const GRID_DIM = 10;
+const BLOCK_SIZE = 60;
+const ROAD_WIDTH = 14;
+const START_OFFSET = -(((GRID_DIM * (BLOCK_SIZE + ROAD_WIDTH)) - ROAD_WIDTH) / 2) + BLOCK_SIZE / 2;
+
+const getWorldPosition = (index: number) => {
+  const plotIndex = index % (GRID_DIM * GRID_DIM * 4);
+  const blockIndex = Math.floor(plotIndex / 4);
+  const slot = plotIndex % 4;
+  const bx = blockIndex % GRID_DIM;
+  const bz = Math.floor(blockIndex / GRID_DIM);
+  const centerX = START_OFFSET + bx * (BLOCK_SIZE + ROAD_WIDTH);
+  const centerZ = START_OFFSET + bz * (BLOCK_SIZE + ROAD_WIDTH);
+  const offsets = [
+    [-16, -16], [16, -16], [-16, 16], [16, 16],
+  ];
+  const [ox, oz] = offsets[slot];
+  return { x: centerX + ox, z: centerZ + oz };
+};
 
 export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
   students,
@@ -54,298 +57,231 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
   onFlyToMyTower,
   onStartQuiz,
   onNavigate,
-  is360View = false,
-  onToggle360,
+  onJoystickChange,
+  onMapSelect,
+  cameraPosition = { x: 0, z: 0 },
 }) => {
   const districts: Array<{ id: Department | 'ALL'; label: string }> = [
-    { id: 'ALL', label: 'All Districts' },
-    { id: 'CSE', label: 'CSE Sector' },
-    { id: 'ISE', label: 'ISE Cyberway' },
-    { id: 'AIML', label: 'AI/ML Valley' },
-    { id: 'MC', label: 'MC Nexus' },
-    { id: 'EEE', label: 'EEE Grid' },
-    { id: 'ECE', label: 'ECE Subnet' },
-    { id: 'MECH', label: 'MECH Works' },
-    { id: 'AUTO', label: 'AUTO Yard' },
-    { id: 'CIVIL', label: 'CIVIL Grounds' },
-    { id: 'AERO', label: 'AERO Bay' },
-    { id: 'OTHERS', label: 'Other Districts' },
+    { id: 'ALL', label: 'All Districts' }, { id: 'CSE', label: 'CSE Sector' },
+    { id: 'ISE', label: 'ISE Cyberway' }, { id: 'AIML', label: 'AI/ML Valley' },
+    { id: 'MC', label: 'MC Nexus' }, { id: 'EEE', label: 'EEE Grid' },
+    { id: 'ECE', label: 'ECE Subnet' }, { id: 'MECH', label: 'MECH Works' },
+    { id: 'AUTO', label: 'AUTO Yard' }, { id: 'CIVIL', label: 'CIVIL Grounds' },
+    { id: 'AERO', label: 'AERO Bay' }, { id: 'OTHERS', label: 'Other Districts' },
   ];
 
-  const handleNav = (dir: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout') => {
+  const [joystickActive, setJoystickActive] = useState(false);
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const joystickPointer = useRef<number | null>(null);
+  const joystickRadius = 52;
+
+  const mapMarkers = useMemo(() => students.slice(0, 80).map((student, index) => ({
+    student,
+    position: getWorldPosition(index),
+  })), [students]);
+
+  const cameraMapPosition = {
+    left: `${Math.max(3, Math.min(97, ((cameraPosition.x + WORLD_SIZE / 2) / WORLD_SIZE) * 100))}%`,
+    top: `${Math.max(3, Math.min(97, ((cameraPosition.z + WORLD_SIZE / 2) / WORLD_SIZE) * 100))}%`,
+  };
+
+  const updateJoystick = (clientX: number, clientY: number) => {
+    const rect = joystickRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = clientX - cx;
+    let dy = clientY - cy;
+    const distance = Math.hypot(dx, dy);
+    if (distance > joystickRadius) {
+      const scale = joystickRadius / distance;
+      dx *= scale;
+      dy *= scale;
+    }
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    }
+    onJoystickChange?.({ x: dx / joystickRadius, y: dy / joystickRadius });
+  };
+
+  const resetJoystick = () => {
+    joystickPointer.current = null;
+    setJoystickActive(false);
+    if (knobRef.current) knobRef.current.style.transform = 'translate(-50%, -50%)';
+    onJoystickChange?.({ x: 0, y: 0 });
+  };
+
+  const startJoystick = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    joystickPointer.current = e.pointerId;
+    setJoystickActive(true);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    soundEngine.playTap();
+    updateJoystick(e.clientX, e.clientY);
+  };
+
+  const moveJoystick = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (joystickPointer.current !== e.pointerId) return;
+    e.preventDefault();
+    updateJoystick(e.clientX, e.clientY);
+  };
+
+  const handleNav = (dir: 'zoomin' | 'zoomout' | 'autoorbit') => {
     soundEngine.playTap();
     onNavigate(dir);
   };
 
-  const toggle360 = () => {
+  const handleQuest = (index: number) => {
     soundEngine.playTap();
-    onToggle360?.();
+    if (index === 0) onFlyToMyTower();
+    else if (index === 1) onSelectDistrict('AIML');
+    else if (index === 2) onStartQuiz();
+    else {
+      onSelectDistrict('ALL');
+      const communityTarget = students.find((student) => student.id !== currentUser.id);
+      if (communityTarget) {
+        const targetIndex = students.findIndex((student) => student.id === communityTarget.id);
+        const pos = getWorldPosition(Math.max(0, targetIndex));
+        onMapSelect?.(pos.x, pos.z);
+      }
+    }
   };
 
+  const normalizedCameraX = Math.round(cameraPosition.x);
+  const normalizedCameraZ = Math.round(cameraPosition.z);
+
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden select-none">
-      {/* Ambient HUD edge treatment */}
-      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#030914]/90 via-[#06111c]/40 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#030914]/95 via-[#06111c]/50 to-transparent" />
-
-      {/* Top navigation / status HUD */}
-      <div className="absolute left-4 right-4 top-4 sm:left-6 sm:right-6 sm:top-5 flex items-start justify-between gap-3">
-        <div className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/10 bg-[#071321]/88 px-3.5 py-2.5 shadow-[0_16px_45px_rgba(0,0,0,.35)] backdrop-blur-xl">
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-orange-400/30 bg-orange-400/10">
-            <Radio className="h-4 w-4 text-orange-300" />
-            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.9)]" />
-          </div>
-          <div className="leading-none">
-            <div className="flex items-center gap-2 text-[11px] font-black tracking-[.18em] text-white">
-              CLOUD CITY
-              <span className="rounded-md border border-orange-400/20 bg-orange-400/10 px-1.5 py-1 text-[8px] tracking-[.12em] text-orange-300">
-                LIVE
-              </span>
+    <div className="pointer-events-none absolute inset-0 z-20 select-none">
+      {/* Compact city identity / controls */}
+      <div className="pointer-events-auto absolute left-4 top-4 hidden md:block">
+        <div className="city-glass-panel w-[304px] rounded-2xl px-4 py-3 shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-300"><Navigation className="h-5 w-5" /></div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2"><span className="text-sm font-black text-white">CLOUD CITY</span><span className="city-status-dot" /></div>
+              <div className="text-[9px] font-mono uppercase tracking-[0.16em] text-slate-500">Explore · Learn · Earn</div>
             </div>
-            <div className="mt-1 text-[9px] font-medium tracking-wide text-slate-400">
-              Explore · Learn · Earn
-            </div>
+            <div className="text-right"><div className="text-[9px] font-mono text-slate-500">LIVE</div><div className="text-xs font-black text-emerald-300">{students.length} TOWERS</div></div>
           </div>
-          <div className="hidden h-7 w-px bg-white/10 sm:block" />
-          <div className="hidden items-center gap-2 sm:flex">
-            <Layers3 className="h-3.5 w-3.5 text-cyan-300" />
-            <span className="text-[10px] font-semibold text-slate-300">{students.length} TOWERS</span>
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 text-[9px] font-mono text-slate-500">
+            <span className="flex items-center gap-1.5"><MousePointer2 className="h-3 w-3 text-cyan-300" /> Drag to orbit</span>
+            <span className="flex items-center gap-1.5"><Move className="h-3 w-3 text-emerald-300" /> Drag joystick</span>
           </div>
-        </div>
-
-        <div className="pointer-events-auto flex items-center gap-2">
-          <div className="hidden items-center gap-2 rounded-xl border border-white/10 bg-[#071321]/88 px-3 py-2 backdrop-blur-xl md:flex">
-            <Flame className="h-3.5 w-3.5 fill-orange-400 text-orange-400" />
-            <span className="text-[10px] font-bold text-orange-200">{currentUser.streak} DAY STREAK</span>
-          </div>
-          <div className="hidden items-center gap-2 rounded-xl border border-white/10 bg-[#071321]/88 px-3 py-2 backdrop-blur-xl lg:flex">
-            <Trophy className="h-3.5 w-3.5 text-cyan-300" />
-            <span className="font-mono text-[10px] font-bold text-cyan-200">{currentUser.points} PTS</span>
-          </div>
-          <button
-            onClick={() => { soundEngine.playTap(); onStartQuiz(); }}
-            className="group flex items-center gap-2 rounded-xl border border-orange-300/40 bg-orange-400 px-3.5 py-2.5 text-[10px] font-black tracking-wide text-slate-950 shadow-[0_8px_30px_rgba(255,153,0,.2)] transition-all hover:-translate-y-0.5 hover:bg-orange-300"
-          >
-            <Zap className="h-3.5 w-3.5 fill-current transition-transform group-hover:scale-110" />
-            WEEKLY ARENA
-          </button>
         </div>
       </div>
 
-      {/* Left mission panel */}
-      <div className="pointer-events-auto absolute left-4 top-[88px] w-[min(310px,calc(100vw-32px))] sm:left-6 sm:top-[92px]">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#071321]/90 shadow-[0_22px_70px_rgba(0,0,0,.4)] backdrop-blur-2xl">
-          <div className="border-b border-white/10 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[10px] font-black tracking-[.18em] text-slate-400">CURRENT OBJECTIVE</div>
-                <div className="mt-1 text-sm font-bold text-white">Explore Cloud City</div>
-              </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-400/20 bg-orange-400/10">
-                <Crosshair className="h-4 w-4 text-orange-300" />
-              </div>
-            </div>
+      {/* Search / actions */}
+      <div className="pointer-events-auto absolute right-4 top-4 flex max-w-[calc(100%-32px)] items-center gap-2">
+        <div className="relative hidden sm:block w-52 lg:w-60">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <input value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} placeholder="Search student / roll" className="city-input h-10 w-full rounded-xl pl-9 pr-3 text-[11px] font-mono text-slate-200 outline-none" />
+        </div>
+        <button onClick={() => { soundEngine.playTap(); onFlyToMyTower(); }} className="city-control h-10 rounded-xl px-3 text-[10px] font-bold text-slate-200"><MapPin className="h-3.5 w-3.5 text-aws-orange" /><span className="hidden lg:inline">MY TOWER</span></button>
+        <button onClick={() => { soundEngine.playTap(); onStartQuiz(); }} className="city-primary h-10 rounded-xl px-3.5 text-[10px] font-black"><Zap className="h-3.5 w-3.5 fill-current" /> WEEKLY QUIZ</button>
+      </div>
+
+      {/* Left objective + functional quests */}
+      <div className="pointer-events-auto absolute left-4 top-[126px] hidden lg:block w-[304px]">
+        <div className="city-glass-panel rounded-2xl p-4 shadow-2xl">
+          <div className="flex items-center justify-between">
+            <div><div className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-aws-orange">Current objective</div><div className="mt-1 text-sm font-black text-white">Visit the AWS Training Hub</div></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-300"><Target className="h-4 w-4" /></div>
           </div>
-
-          <div className="space-y-3 px-4 py-3">
-            <div>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="font-semibold text-slate-300">City exploration</span>
-                <span className="font-mono text-orange-300">{students.length} active</span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
-                <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-orange-500 to-amber-300 shadow-[0_0_12px_rgba(255,153,0,.55)]" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => { soundEngine.playTap(); onFlyToMyTower(); }}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[.035] px-3 py-2.5 text-left transition-all hover:border-orange-400/30 hover:bg-orange-400/[.07]"
-              >
-                <MapPin className="h-3.5 w-3.5 text-orange-300" />
-                <span>
-                  <span className="block text-[9px] font-black tracking-wide text-white">MY TOWER</span>
-                  <span className="block text-[9px] text-slate-500">{currentUser.floors} floors</span>
-                </span>
+          <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Head to the Training Hub and complete the learning challenge.</p>
+          <div className="mt-3 flex items-center justify-between text-[9px] font-mono text-slate-400"><span>PROGRESS</span><span className="text-slate-200">0/1</span></div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full w-1/3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" /></div>
+          <div className="mt-3 flex items-center gap-2 border-t border-white/10 pt-3"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300"><Zap className="h-3.5 w-3.5" /></div><div><div className="text-[8px] font-mono text-slate-500">XP REWARD</div><div className="text-xs font-black text-cyan-300">+150 XP</div></div></div>
+          <div className="mt-3 border-t border-white/10 pt-3">
+            <div className="mb-1.5 flex items-center justify-between"><span className="text-[9px] font-mono uppercase tracking-[0.15em] text-slate-500">Quests</span><span className="text-[8px] font-mono text-cyan-300">CLICK TO NAVIGATE</span></div>
+            {['Visit the AWS Training Hub','Explore the Solutions Lab','Complete a Challenge','Meet the Community'].map((q, i) => (
+              <button key={q} onClick={() => handleQuest(i)} className="group flex w-full items-center gap-2 border-b border-white/[0.07] py-2 text-left last:border-0 hover:bg-white/[0.035]">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-400 group-hover:border-amber-400/30 group-hover:text-amber-300"><GraduationCap className="h-3 w-3" /></span>
+                <span className="min-w-0 flex-1 truncate text-[9px] text-slate-300 group-hover:text-white">{q}</span><span className="text-[8px] text-slate-600">0/1</span><ChevronRight className="h-3 w-3 text-slate-600 group-hover:text-amber-300" />
               </button>
-              <button
-                onClick={toggle360}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-all ${
-                  is360View
-                    ? 'border-cyan-300/40 bg-cyan-300/10'
-                    : 'border-white/10 bg-white/[.035] hover:border-cyan-300/30 hover:bg-cyan-300/[.06]'
-                }`}
-              >
-                <RotateCw className={`h-3.5 w-3.5 ${is360View ? 'animate-spin text-cyan-200' : 'text-cyan-300'}`} />
-                <span>
-                  <span className="block text-[9px] font-black tracking-wide text-white">{is360View ? '360 ACTIVE' : '360 VIEW'}</span>
-                  <span className="block text-[9px] text-slate-500">{is360View ? 'Auto orbiting' : 'Auto orbit'}</span>
-                </span>
-              </button>
-            </div>
-
-            <div className="border-t border-white/10 pt-3">
-              <div className="mb-2 flex items-center gap-2">
-                <Search className="h-3.5 w-3.5 text-slate-500" />
-                <span className="text-[9px] font-black tracking-[.16em] text-slate-500">FIND A STUDENT</span>
-              </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Name or register number..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-3 pr-3 text-[11px] font-medium text-slate-200 outline-none transition-all placeholder:text-slate-600 focus:border-orange-300/50 focus:bg-orange-300/[.03]"
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Right utility rail */}
-      <div className="pointer-events-auto absolute right-4 top-[88px] flex flex-col gap-2 sm:right-6 sm:top-[92px]">
-        <div className="rounded-2xl border border-white/10 bg-[#071321]/90 p-1.5 shadow-[0_18px_55px_rgba(0,0,0,.35)] backdrop-blur-2xl">
-          <button
-            onClick={toggle360}
-            className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all ${
-              is360View
-                ? 'bg-cyan-300 text-slate-950 shadow-[0_0_22px_rgba(103,232,249,.35)]'
-                : 'text-slate-400 hover:bg-white/[.06] hover:text-white'
-            }`}
-            title="Toggle 360 degree view"
-          >
-            <RotateCw className={`h-4 w-4 ${is360View ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={() => { soundEngine.playTap(); onFlyToMyTower(); }}
-            className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-white/[.06] hover:text-orange-300"
-            title="Focus my tower"
-          >
-            <Crosshair className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-[#071321]/90 p-1.5 shadow-[0_18px_55px_rgba(0,0,0,.35)] backdrop-blur-2xl">
-          <button
-            onClick={() => { soundEngine.playTap(); onSkyThemeChange('midnight'); }}
-            className={`flex h-9 w-11 items-center justify-center rounded-xl ${skyTheme === 'midnight' ? 'bg-orange-400/15 text-orange-200' : 'text-slate-500 hover:text-slate-200'}`}
-            title="Midnight"
-          >
-            <Moon className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => { soundEngine.playTap(); onSkyThemeChange('sunset'); }}
-            className={`flex h-9 w-11 items-center justify-center rounded-xl ${skyTheme === 'sunset' ? 'bg-orange-400/15 text-orange-200' : 'text-slate-500 hover:text-slate-200'}`}
-            title="Sunset"
-          >
-            <Sunset className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => { soundEngine.playTap(); onSkyThemeChange('bright'); }}
-            className={`flex h-9 w-11 items-center justify-center rounded-xl ${skyTheme === 'bright' ? 'bg-cyan-300/15 text-cyan-200' : 'text-slate-500 hover:text-slate-200'}`}
-            title="Bright"
-          >
-            <Sun className="h-4 w-4" />
-          </button>
+      {/* Player status */}
+      <div className="pointer-events-auto absolute right-4 top-[126px] hidden lg:block w-[248px]">
+        <div className="city-glass-panel rounded-2xl p-3.5 shadow-2xl">
+          <div className="flex items-center gap-3"><img src={currentUser.avatar} alt="" className="h-10 w-10 rounded-xl border border-cyan-300/30 bg-slate-800 object-cover" /><div className="min-w-0 flex-1"><div className="text-[8px] font-mono uppercase tracking-widest text-slate-500">Level 08</div><div className="truncate text-xs font-black text-white">{currentUser.name}</div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full w-[62%] rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" /></div></div></div>
+          <div className="mt-2 text-[9px] font-mono text-slate-400"><span className="text-cyan-300">{currentUser.points.toLocaleString()} XP</span> / 2,000 XP</div>
+          <div className="my-2.5 h-px bg-white/10" />
+          <div className="flex items-center justify-between rounded-xl border border-amber-400/10 bg-amber-400/[0.04] px-3 py-2"><span className="flex items-center gap-2 text-[10px] text-slate-200"><Flame className="h-3.5 w-3.5 text-amber-400 fill-amber-400" /> {currentUser.streak} Day Streak</span><span>🔥</span></div>
+          <button onClick={onStartQuiz} className="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-white/[0.04]"><Trophy className="h-4 w-4 text-amber-300" /><span className="flex-1"><span className="block text-[9px] font-bold text-slate-200">Next Milestone</span><span className="block text-[8px] text-slate-500">Complete 5 more quests</span></span><ChevronRight className="h-3 w-3 text-slate-600" /></button>
         </div>
       </div>
 
-      {/* Bottom city / district strip */}
-      <div className="pointer-events-auto absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 sm:bottom-5 sm:left-6 sm:right-6">
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 hidden items-center gap-2 px-1 text-[9px] font-black tracking-[.2em] text-slate-500 lg:flex">
-            <Compass className="h-3 w-3 text-orange-300" />
-            CITY SECTORS
-            <span className="h-px w-16 bg-white/10" />
+      {/* Zoom + 360 controls beside the joystick */}
+      <div className="pointer-events-auto absolute bottom-[88px] left-[158px] flex flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-950/85 shadow-2xl backdrop-blur-xl">
+        <button onClick={() => handleNav('zoomin')} className="flex h-10 w-10 items-center justify-center text-slate-300 hover:bg-white/10 hover:text-white" title="Zoom in"><ZoomIn className="h-4 w-4" /></button>
+        <div className="h-px bg-white/10" />
+        <button onClick={() => handleNav('zoomout')} className="flex h-10 w-10 items-center justify-center text-slate-300 hover:bg-white/10 hover:text-white" title="Zoom out"><ZoomOut className="h-4 w-4" /></button>
+        <div className="h-px bg-white/10" />
+        <button onClick={() => handleNav('autoorbit')} className="flex h-10 w-10 items-center justify-center text-cyan-300 hover:bg-cyan-400/10" title="Toggle 360° auto orbit"><Rotate3D className="h-4 w-4" /></button>
+      </div>
+
+      {/* Analog joystick */}
+      <div className="pointer-events-auto absolute bottom-5 left-5">
+        <div className="mb-1.5 ml-1 flex w-fit items-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-2.5 py-1 backdrop-blur-md"><Crosshair className={`h-3 w-3 ${joystickActive ? 'text-amber-300' : 'text-slate-500'}`} /><span className="text-[8px] font-mono font-bold uppercase tracking-[0.16em] text-slate-400">MOVE</span></div>
+        <div ref={joystickRef} onPointerDown={startJoystick} onPointerMove={moveJoystick} onPointerUp={resetJoystick} onPointerCancel={resetJoystick} onLostPointerCapture={resetJoystick} className={`relative h-[126px] w-[126px] touch-none rounded-full border border-white/15 bg-[radial-gradient(circle_at_50%_40%,rgba(36,55,78,.96),rgba(5,12,22,.99)_66%)] shadow-[0_12px_45px_rgba(0,0,0,.55),inset_0_1px_0_rgba(255,255,255,.08)] ${joystickActive ? 'ring-2 ring-amber-400/25' : ''}`}>
+          <div className="absolute inset-3 rounded-full border border-cyan-300/10" />
+          <div className="absolute inset-0 flex items-center justify-center text-slate-400"><span className="absolute top-2 text-lg leading-none">▲</span><span className="absolute bottom-1.5 text-lg leading-none">▼</span><span className="absolute left-2 text-lg leading-none">◀</span><span className="absolute right-2 text-lg leading-none">▶</span></div>
+          <div ref={knobRef} className="absolute left-1/2 top-1/2 h-[54px] w-[54px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-300/50 bg-[radial-gradient(circle_at_35%_28%,#ffc04d,#e58b05_55%,#9b5300)] shadow-[0_0_25px_rgba(255,153,0,.38),inset_0_2px_5px_rgba(255,255,255,.35)] transition-transform duration-75"><div className="absolute inset-[8px] rounded-full border border-white/15" /></div>
+        </div>
+      </div>
+
+      {/* Functional live city map */}
+      <div className="pointer-events-auto absolute bottom-[76px] right-4 hidden sm:block h-[154px] w-[154px]">
+        <div className="city-glass-panel relative h-full w-full overflow-hidden rounded-2xl p-2 shadow-2xl">
+          <div className="absolute left-3 top-2 z-10 flex items-center gap-1.5 text-[8px] font-mono font-bold tracking-wider text-slate-400"><MapIcon className="h-3 w-3 text-cyan-300" /> CITY MAP</div>
+          <div className="absolute right-3 top-2 z-10 text-[7px] font-mono text-slate-600">{normalizedCameraX},{normalizedCameraZ}</div>
+          <div className="absolute inset-2 top-7 bottom-2 overflow-hidden rounded-xl border border-white/10 bg-[#07111b]" onClick={(e) => {
+            if (!onMapSelect) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width - 0.5) * WORLD_SIZE;
+            const z = ((e.clientY - rect.top) / rect.height - 0.5) * WORLD_SIZE;
+            onMapSelect(x, z);
+            soundEngine.playTap();
+          }}>
+            <div className="absolute inset-0 opacity-45" style={{ backgroundImage: 'linear-gradient(45deg, transparent 47%, #244052 48%, #244052 51%, transparent 52%), linear-gradient(-45deg, transparent 47%, #244052 48%, #244052 51%, transparent 52%)', backgroundSize: '25px 25px' }} />
+            {mapMarkers.map(({ student, position }) => {
+              const left = `${((position.x + WORLD_SIZE / 2) / WORLD_SIZE) * 100}%`;
+              const top = `${((position.z + WORLD_SIZE / 2) / WORLD_SIZE) * 100}%`;
+              return <button key={student.id} title={student.name} onClick={(e) => { e.stopPropagation(); onMapSelect?.(position.x, position.z); soundEngine.playTap(); }} className={`absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${student.id === currentUser.id ? 'bg-amber-300 shadow-[0_0_8px_rgba(255,193,7,.9)]' : 'bg-cyan-400/70 hover:bg-white'}`} style={{ left, top }} />;
+            })}
+            <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-300/70 bg-amber-400/20 shadow-[0_0_12px_rgba(255,153,0,.55)]" style={{ left: cameraMapPosition.left, top: cameraMapPosition.top }}><div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-amber-300" /></div>
+            <span className="absolute left-1/2 top-1 -translate-x-1/2 text-[7px] font-mono text-slate-400">N</span><span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-mono text-slate-600">S</span><span className="absolute left-1 top-1/2 -translate-y-1/2 text-[7px] font-mono text-slate-600">W</span><span className="absolute right-1 top-1/2 -translate-y-1/2 text-[7px] font-mono text-slate-600">E</span>
           </div>
-          <div className="flex max-w-[calc(100vw-150px)] items-center gap-1.5 overflow-x-auto rounded-2xl border border-white/10 bg-[#071321]/90 p-1.5 shadow-[0_18px_55px_rgba(0,0,0,.35)] backdrop-blur-2xl scrollbar-hide">
+        </div>
+      </div>
+
+      {/* Full-width district / student branch rail */}
+      <div className="pointer-events-auto absolute bottom-4 left-[184px] right-[184px]">
+        <div className="city-glass-panel flex min-w-0 items-center gap-1 rounded-2xl p-1.5">
+          <div className="mr-1 hidden shrink-0 items-center gap-1.5 px-2 text-[8px] font-mono font-bold uppercase tracking-wider text-slate-500 xl:flex"><Building2 className="h-3 w-3 text-cyan-300" /> BRANCHES</div>
+          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">
             {districts.map((d) => {
               const isActive = selectedDistrict === d.id;
-              return (
-                <button
-                  key={d.id}
-                  onClick={() => { soundEngine.playTap(); onSelectDistrict(d.id); }}
-                  className={`shrink-0 rounded-xl px-3 py-2 text-[9px] font-black tracking-wide transition-all ${
-                    isActive
-                      ? 'bg-orange-400 text-slate-950 shadow-[0_5px_20px_rgba(255,153,0,.22)]'
-                      : 'text-slate-500 hover:bg-white/[.05] hover:text-slate-200'
-                  }`}
-                >
-                  {d.label}
-                </button>
-              );
+              return <button key={d.id} onClick={() => { soundEngine.playTap(); onSelectDistrict(d.id); }} className={`shrink-0 whitespace-nowrap rounded-xl px-3 py-1.5 text-[8px] font-mono font-bold transition-all ${isActive ? 'bg-aws-orange text-slate-950 shadow-[0_0_16px_rgba(255,153,0,.2)]' : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'}`}>{d.label}</button>;
             })}
           </div>
         </div>
+      </div>
 
-        {/* Circular game-style navigation controller */}
-        <div className="shrink-0">
-          <div className="mb-2 hidden justify-end text-[9px] font-black tracking-[.18em] text-slate-500 sm:flex">CAMERA NAV</div>
-          <div className="relative h-[116px] w-[116px] rounded-full border border-white/15 bg-[#06111d]/95 p-2 shadow-[0_18px_60px_rgba(0,0,0,.5),inset_0_0_35px_rgba(24,68,99,.25)] backdrop-blur-2xl">
-            <div className="absolute inset-1 rounded-full border border-orange-300/20" />
-            <div className="absolute inset-[13px] rounded-full border border-white/[.06]" />
-
-            <button
-              onClick={() => handleNav('up')}
-              className="absolute left-1/2 top-2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/[.08] hover:text-white active:scale-90"
-              title="Pan up"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => handleNav('down')}
-              className="absolute bottom-2 left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/[.08] hover:text-white active:scale-90"
-              title="Pan down"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => handleNav('left')}
-              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/[.08] hover:text-white active:scale-90"
-              title="Pan left"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => handleNav('right')}
-              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-white/[.08] hover:text-white active:scale-90"
-              title="Pan right"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-
-            <div className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-orange-300/40 bg-[radial-gradient(circle_at_35%_30%,#ffd27a,#ff9900_52%,#a44d00)] shadow-[0_0_28px_rgba(255,153,0,.35)]">
-              <div className="absolute inset-2 rounded-full border border-white/25" />
-            </div>
-
-            <button
-              onClick={() => handleNav('zoomin')}
-              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-lg text-cyan-300/80 transition-all hover:bg-cyan-300/10 hover:text-cyan-200 active:scale-90"
-              title="Zoom in"
-            >
-              <ZoomIn className="h-3 w-3" />
-            </button>
-            <button
-              onClick={() => handleNav('zoomout')}
-              className="absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-lg text-rose-300/70 transition-all hover:bg-rose-300/10 hover:text-rose-200 active:scale-90"
-              title="Zoom out"
-            >
-              <ZoomOut className="h-3 w-3" />
-            </button>
-          </div>
+      {/* Theme controls */}
+      <div className="pointer-events-auto absolute bottom-4 right-4 hidden xl:flex items-center gap-2">
+        <div className="city-glass-panel flex items-center rounded-xl p-1">
+          {[{ id: 'midnight' as const, icon: Moon, label: 'Night' }, { id: 'sunset' as const, icon: Sunset, label: 'Sunset' }, { id: 'bright' as const, icon: Sun, label: 'Day' }].map(({ id, icon: Icon, label }) => <button key={id} onClick={() => { soundEngine.playTap(); onSkyThemeChange(id); }} className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[8px] font-mono font-bold ${skyTheme === id ? 'bg-white/10 text-amber-300' : 'text-slate-500 hover:text-slate-200'}`}><Icon className="h-3 w-3" />{label}</button>)}
         </div>
       </div>
 
-      {/* Desktop interaction hint */}
-      <div className="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 items-center gap-4 rounded-full border border-white/10 bg-[#071321]/75 px-4 py-2 text-[9px] font-semibold tracking-wide text-slate-500 backdrop-blur-xl xl:flex">
-        <span className="flex items-center gap-1.5"><MousePointer2 className="h-3 w-3 text-cyan-300" /> DRAG <span className="text-slate-300">ORBIT</span></span>
-        <span className="h-3 w-px bg-white/10" />
-        <span className="flex items-center gap-1.5"><Move className="h-3 w-3 text-emerald-300" /> SCROLL <span className="text-slate-300">ZOOM</span></span>
-        <span className="h-3 w-px bg-white/10" />
-        <span className="flex items-center gap-1.5"><Navigation className="h-3 w-3 text-orange-300" /> CLICK GROUND <span className="text-slate-300">TELEPORT</span></span>
-      </div>
+      {/* Minimal control hints */}
+      <div className="pointer-events-none absolute bottom-1 left-5 hidden items-center gap-2 text-[8px] font-mono text-slate-600 md:flex"><span className="flex items-center gap-1"><Navigation className="h-3 w-3 text-amber-400" /> Click ground: teleport</span><span>•</span><span className="flex items-center gap-1"><MousePointer2 className="h-3 w-3 text-cyan-300" /> Drag: orbit</span><span>•</span><span className="flex items-center gap-1"><Compass className="h-3 w-3 text-emerald-300" /> 360: auto orbit</span></div>
     </div>
   );
 };
