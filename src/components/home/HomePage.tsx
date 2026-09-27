@@ -97,8 +97,11 @@ export const HomePage: React.FC = () => {
   return (
     <div className="text-zinc-100 overflow-hidden">
 
-      {/* ── PROCEDURAL OVERVIEW CITY ───────────────────────────────────── */}
-      <OverviewCityScene />
+      {/* ── OVERVIEW CITY HERO ───────────────────────────────────────────── */}
+      <OverviewCityScene
+        onExplore={() => { soundEngine.playTap(); setActiveTab('city'); }}
+        onQuiz={() => { soundEngine.playTap(); setActiveTab('quiz'); }}
+      />
 
       {/* ── STATS BAR (Frosted Glass Cards) ─────────────────────────────── */}
       <section className="relative py-10 px-4 sm:px-6 lg:px-8">
