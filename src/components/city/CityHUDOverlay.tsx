@@ -154,24 +154,6 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 select-none">
-      {/* Compact city identity / controls */}
-      <div className="pointer-events-auto absolute left-4 top-4 hidden md:block">
-        <div className="city-glass-panel w-[304px] rounded-2xl px-4 py-3 shadow-2xl">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-300"><Navigation className="h-5 w-5" /></div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2"><span className="text-sm font-black text-white">CLOUD CITY</span><span className="city-status-dot" /></div>
-              <div className="text-[9px] font-mono uppercase tracking-[0.16em] text-slate-500">Explore · Learn · Earn</div>
-            </div>
-            <div className="text-right"><div className="text-[9px] font-mono text-slate-500">LIVE</div><div className="text-xs font-black text-emerald-300">{students.length} TOWERS</div></div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 text-[9px] font-mono text-slate-500">
-            <span className="flex items-center gap-1.5"><MousePointer2 className="h-3 w-3 text-cyan-300" /> Drag to orbit</span>
-            <span className="flex items-center gap-1.5"><Move className="h-3 w-3 text-emerald-300" /> Drag joystick</span>
-          </div>
-        </div>
-      </div>
-
       {/* Search / actions */}
       <div className="pointer-events-auto absolute right-4 top-4 flex max-w-[calc(100%-32px)] items-center gap-2">
         <div className="relative hidden sm:block w-52 lg:w-60">
@@ -182,37 +164,15 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
         <button onClick={() => { soundEngine.playTap(); onStartQuiz(); }} className="city-primary h-10 rounded-xl px-3.5 text-[10px] font-black"><Zap className="h-3.5 w-3.5 fill-current" /> WEEKLY QUIZ</button>
       </div>
 
-      {/* Left objective + functional quests */}
-      <div className="pointer-events-auto absolute left-4 top-[126px] hidden lg:block w-[304px]">
-        <div className="city-glass-panel rounded-2xl p-4 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div><div className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-aws-orange">Current objective</div><div className="mt-1 text-sm font-black text-white">Visit the AWS Training Hub</div></div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/10 text-amber-300"><Target className="h-4 w-4" /></div>
-          </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Head to the Training Hub and complete the learning challenge.</p>
-          <div className="mt-3 flex items-center justify-between text-[9px] font-mono text-slate-400"><span>PROGRESS</span><span className="text-slate-200">0/1</span></div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full w-1/3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300" /></div>
-          <div className="mt-3 flex items-center gap-2 border-t border-white/10 pt-3"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300"><Zap className="h-3.5 w-3.5" /></div><div><div className="text-[8px] font-mono text-slate-500">XP REWARD</div><div className="text-xs font-black text-cyan-300">+150 XP</div></div></div>
-          <div className="mt-3 border-t border-white/10 pt-3">
-            <div className="mb-1.5 flex items-center justify-between"><span className="text-[9px] font-mono uppercase tracking-[0.15em] text-slate-500">Quests</span><span className="text-[8px] font-mono text-cyan-300">CLICK TO NAVIGATE</span></div>
-            {['Visit the AWS Training Hub','Explore the Solutions Lab','Complete a Challenge','Meet the Community'].map((q, i) => (
-              <button key={q} onClick={() => handleQuest(i)} className="group flex w-full items-center gap-2 border-b border-white/[0.07] py-2 text-left last:border-0 hover:bg-white/[0.035]">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-400 group-hover:border-amber-400/30 group-hover:text-amber-300"><GraduationCap className="h-3 w-3" /></span>
-                <span className="min-w-0 flex-1 truncate text-[9px] text-slate-300 group-hover:text-white">{q}</span><span className="text-[8px] text-slate-600">0/1</span><ChevronRight className="h-3 w-3 text-slate-600 group-hover:text-amber-300" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* Player status */}
-      <div className="pointer-events-auto absolute right-4 top-[126px] hidden lg:block w-[248px]">
-        <div className="city-glass-panel rounded-2xl p-3.5 shadow-2xl">
-          <div className="flex items-center gap-3"><img src={currentUser.avatar} alt="" className="h-10 w-10 rounded-xl border border-cyan-300/30 bg-slate-800 object-cover" /><div className="min-w-0 flex-1"><div className="text-[8px] font-mono uppercase tracking-widest text-slate-500">Level 08</div><div className="truncate text-xs font-black text-white">{currentUser.name}</div><div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800"><div className="h-full w-[62%] rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" /></div></div></div>
-          <div className="mt-2 text-[9px] font-mono text-slate-400"><span className="text-cyan-300">{currentUser.points.toLocaleString()} XP</span> / 2,000 XP</div>
-          <div className="my-2.5 h-px bg-white/10" />
-          <div className="flex items-center justify-between rounded-xl border border-amber-400/10 bg-amber-400/[0.04] px-3 py-2"><span className="flex items-center gap-2 text-[10px] text-slate-200"><Flame className="h-3.5 w-3.5 text-amber-400 fill-amber-400" /> {currentUser.streak} Day Streak</span><span>🔥</span></div>
-          <button onClick={onStartQuiz} className="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-white/[0.04]"><Trophy className="h-4 w-4 text-amber-300" /><span className="flex-1"><span className="block text-[9px] font-bold text-slate-200">Next Milestone</span><span className="block text-[8px] text-slate-500">Complete 5 more quests</span></span><ChevronRight className="h-3 w-3 text-slate-600" /></button>
+      <div className="pointer-events-auto absolute right-4 top-[126px] hidden lg:block w-[272px]">
+        <div className="city-glass-panel rounded-2xl p-4 shadow-2xl">
+          <div className="flex items-center gap-3"><img src={currentUser.avatar} alt="" className="h-11 w-11 rounded-xl border border-cyan-300/30 bg-slate-800 object-cover" /><div className="min-w-0 flex-1"><div className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Level 08</div><div className="truncate text-sm font-black text-white">{currentUser.name}</div><div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full w-[62%] rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" /></div></div></div>
+          <div className="mt-2.5 text-[10px] font-mono text-slate-400"><span className="text-cyan-300">{currentUser.points.toLocaleString()} XP</span> / 2,000 XP</div>
+          <div className="my-3 h-px bg-white/10" />
+          <div className="flex items-center justify-between rounded-xl border border-amber-400/10 bg-amber-400/[0.04] px-3 py-2.5"><span className="flex items-center gap-2 text-[11px] text-slate-200"><Flame className="h-3.5 w-3.5 text-amber-400 fill-amber-400" /> {currentUser.streak} Day Streak</span><span>🔥</span></div>
+          <button onClick={onStartQuiz} className="mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-2.5 text-left hover:bg-white/[0.04]"><Trophy className="h-4 w-4 text-amber-300" /><span className="flex-1"><span className="block text-[10px] font-bold text-slate-200">Next Milestone</span><span className="block text-[9px] text-slate-500">Complete 5 more quests</span></span><ChevronRight className="h-3 w-3 text-slate-600" /></button>
         </div>
       </div>
 
@@ -260,14 +220,13 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
         </div>
       </div>
 
-      {/* Full-width district / student branch rail */}
-      <div className="pointer-events-auto absolute bottom-4 left-[184px] right-[184px]">
-        <div className="city-glass-panel flex min-w-0 items-center gap-1 rounded-2xl p-1.5">
-          <div className="mr-1 hidden shrink-0 items-center gap-1.5 px-2 text-[8px] font-mono font-bold uppercase tracking-wider text-slate-500 xl:flex"><Building2 className="h-3 w-3 text-cyan-300" /> BRANCHES</div>
-          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-hide">
+      {/* Compact student-branch rail — sized to the branch content, not the viewport */}
+      <div className="pointer-events-auto absolute bottom-4 left-1/2 max-w-[calc(100%-420px)] -translate-x-1/2">
+        <div className="city-glass-panel inline-flex max-w-full items-center gap-1 rounded-xl p-1.5">
+          <div className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-hide">
             {districts.map((d) => {
               const isActive = selectedDistrict === d.id;
-              return <button key={d.id} onClick={() => { soundEngine.playTap(); onSelectDistrict(d.id); }} className={`shrink-0 whitespace-nowrap rounded-xl px-3 py-1.5 text-[8px] font-mono font-bold transition-all ${isActive ? 'bg-aws-orange text-slate-950 shadow-[0_0_16px_rgba(255,153,0,.2)]' : 'text-slate-400 hover:bg-white/[0.06] hover:text-white'}`}>{d.label}</button>;
+              return <button key={d.id} onClick={() => { soundEngine.playTap(); onSelectDistrict(d.id); }} className={`shrink-0 whitespace-nowrap rounded-lg px-2.5 py-2 text-[10px] font-mono font-bold transition-all ${isActive ? 'bg-aws-orange text-slate-950 shadow-[0_0_16px_rgba(255,153,0,.2)]' : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'}`}>{d.label}</button>;
             })}
           </div>
         </div>
@@ -275,8 +234,8 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
 
       {/* Theme controls */}
       <div className="pointer-events-auto absolute bottom-4 right-4 hidden xl:flex items-center gap-2">
-        <div className="city-glass-panel flex items-center rounded-xl p-1">
-          {[{ id: 'midnight' as const, icon: Moon, label: 'Night' }, { id: 'sunset' as const, icon: Sunset, label: 'Sunset' }, { id: 'bright' as const, icon: Sun, label: 'Day' }].map(({ id, icon: Icon, label }) => <button key={id} onClick={() => { soundEngine.playTap(); onSkyThemeChange(id); }} className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[8px] font-mono font-bold ${skyTheme === id ? 'bg-white/10 text-amber-300' : 'text-slate-500 hover:text-slate-200'}`}><Icon className="h-3 w-3" />{label}</button>)}
+        <div className="city-glass-panel flex items-center rounded-xl p-1.5">
+          {[{ id: 'midnight' as const, icon: Moon, label: 'Night' }, { id: 'sunset' as const, icon: Sunset, label: 'Sunset' }, { id: 'bright' as const, icon: Sun, label: 'Day' }].map(({ id, icon: Icon, label }) => <button key={id} onClick={() => { soundEngine.playTap(); onSkyThemeChange(id); }} className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-mono font-bold ${skyTheme === id ? 'bg-white/10 text-amber-300' : 'text-slate-500 hover:text-slate-200'}`}><Icon className="h-4 w-4" />{label}</button>)}
         </div>
       </div>
 
