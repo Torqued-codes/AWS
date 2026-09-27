@@ -195,30 +195,7 @@ export const CityHUDOverlay: React.FC<CityHUDOverlayProps> = ({
         </div>
       </div>
 
-      {/* Functional live city map */}
-      <div className="pointer-events-auto absolute bottom-[76px] right-4 hidden sm:block h-[154px] w-[154px]">
-        <div className="city-glass-panel relative h-full w-full overflow-hidden rounded-2xl p-2 shadow-2xl">
-          <div className="absolute left-3 top-2 z-10 flex items-center gap-1.5 text-[8px] font-mono font-bold tracking-wider text-slate-400"><MapIcon className="h-3 w-3 text-cyan-300" /> CITY MAP</div>
-          <div className="absolute right-3 top-2 z-10 text-[7px] font-mono text-slate-600">{normalizedCameraX},{normalizedCameraZ}</div>
-          <div className="absolute inset-2 top-7 bottom-2 overflow-hidden rounded-xl border border-white/10 bg-[#07111b]" onClick={(e) => {
-            if (!onMapSelect) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width - 0.5) * WORLD_SIZE;
-            const z = ((e.clientY - rect.top) / rect.height - 0.5) * WORLD_SIZE;
-            onMapSelect(x, z);
-            soundEngine.playTap();
-          }}>
-            <div className="absolute inset-0 opacity-45" style={{ backgroundImage: 'linear-gradient(45deg, transparent 47%, #244052 48%, #244052 51%, transparent 52%), linear-gradient(-45deg, transparent 47%, #244052 48%, #244052 51%, transparent 52%)', backgroundSize: '25px 25px' }} />
-            {mapMarkers.map(({ student, position }) => {
-              const left = `${((position.x + WORLD_SIZE / 2) / WORLD_SIZE) * 100}%`;
-              const top = `${((position.z + WORLD_SIZE / 2) / WORLD_SIZE) * 100}%`;
-              return <button key={student.id} title={student.name} onClick={(e) => { e.stopPropagation(); onMapSelect?.(position.x, position.z); soundEngine.playTap(); }} className={`absolute h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${student.id === currentUser.id ? 'bg-amber-300 shadow-[0_0_8px_rgba(255,193,7,.9)]' : 'bg-cyan-400/70 hover:bg-white'}`} style={{ left, top }} />;
-            })}
-            <div className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-300/70 bg-amber-400/20 shadow-[0_0_12px_rgba(255,153,0,.55)]" style={{ left: cameraMapPosition.left, top: cameraMapPosition.top }}><div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-amber-300" /></div>
-            <span className="absolute left-1/2 top-1 -translate-x-1/2 text-[7px] font-mono text-slate-400">N</span><span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-mono text-slate-600">S</span><span className="absolute left-1 top-1/2 -translate-y-1/2 text-[7px] font-mono text-slate-600">W</span><span className="absolute right-1 top-1/2 -translate-y-1/2 text-[7px] font-mono text-slate-600">E</span>
-          </div>
-        </div>
-      </div>
+      
 
       {/* Compact student-branch rail — sized to the branch content, not the viewport */}
       <div className="pointer-events-auto absolute bottom-4 left-1/2 max-w-[calc(100%-420px)] -translate-x-1/2">

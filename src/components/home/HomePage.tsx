@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { 
   Building2, 
@@ -15,12 +15,8 @@ import {
   Globe
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
-import { HeroAWSScene } from './HeroAWSScene';
-import { HeroThreeScene } from './HeroThreeScene';
+import { OverviewCityScene } from './OverviewCityScene';
 import { SectionAmbientBackdrop } from './SectionAmbientBackdrop';
-import { ThreeCityCanvas } from '../city/ThreeCityCanvas';
-import { CityHUDOverlay } from '../city/CityHUDOverlay';
-import { Department, Student } from '../../types';
 
 // Typed shape for the metrics bar — deliberately decoupled from any one
 // data source. Today these four values are derived from the in-memory
@@ -49,63 +45,8 @@ const StatCard: React.FC<{ stat: StatCardData }> = ({ stat }) => (
   </div>
 );
 
-const OverviewCityHero: React.FC<{ students: Student[]; currentUser: Student; onSelectStudent: (student: Student) => void; onStartQuiz: () => void }> = ({ students, currentUser, onSelectStudent, onStartQuiz }) => {
-  const [selectedDistrict, setSelectedDistrict] = useState<Department | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [skyTheme, setSkyTheme] = useState<'midnight' | 'sunset' | 'bright'>('midnight');
-  const [targetStudentId, setTargetStudentId] = useState<string | null>(null);
-  const [navEvent, setNavEvent] = useState<{ dir: string; t: number } | null>(null);
-  const [joystickVector, setJoystickVector] = useState({ x: 0, y: 0 });
-
-  const filteredStudents = useMemo(() => students.filter((student) => {
-    const districtMatch = selectedDistrict === 'ALL' || student.department === selectedDistrict;
-    const q = searchQuery.trim().toLowerCase();
-    return districtMatch && (!q || student.name.toLowerCase().includes(q) || student.rollNumber.toLowerCase().includes(q));
-  }), [students, selectedDistrict, searchQuery]);
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query.trim()) return;
-    const match = students.find((student) => student.name.toLowerCase().includes(query.toLowerCase()) || student.rollNumber.toLowerCase().includes(query.toLowerCase()));
-    if (match) setTargetStudentId(match.id);
-  };
-
-  const handleNavigate = (direction: 'up' | 'down' | 'left' | 'right' | 'zoomin' | 'zoomout' | 'autoorbit') => {
-    setNavEvent({ dir: direction, t: Date.now() });
-  };
-
-  return (
-    <>
-      <ThreeCityCanvas
-        students={filteredStudents}
-        selectedDistrict={selectedDistrict}
-        searchQuery={searchQuery}
-        skyTheme={skyTheme}
-        onSelectStudent={onSelectStudent}
-        targetStudentId={targetStudentId}
-        navEvent={navEvent}
-        joystickVector={joystickVector}
-      />
-      <CityHUDOverlay
-        students={filteredStudents}
-        currentUser={currentUser}
-        selectedDistrict={selectedDistrict}
-        onSelectDistrict={setSelectedDistrict}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearch}
-        skyTheme={skyTheme}
-        onSkyThemeChange={setSkyTheme}
-        onFlyToMyTower={() => setTargetStudentId(currentUser.id)}
-        onStartQuiz={onStartQuiz}
-        onNavigate={handleNavigate}
-        onJoystickChange={setJoystickVector}
-      />
-    </>
-  );
-};
-
 export const HomePage: React.FC = () => {
-  const { students, questions, activeWeek, currentUser, setActiveTab, selectStudentForModal } = useGame();
+  const { students, questions, activeWeek, currentUser, setActiveTab } = useGame();
 
   const highestFloors = Math.max(...students.map(s => s.floors), 1);
   const totalPoints = students.reduce((sum, s) => sum + s.points, 0);
@@ -156,10 +97,8 @@ export const HomePage: React.FC = () => {
   return (
     <div className="text-zinc-100 overflow-hidden">
 
-      {/* ── OVERVIEW / CLOUD CITY HERO ───────────────────────────────────── */}
-      <section className="relative h-[calc(100vh-64px)] min-h-[680px] overflow-hidden bg-[#050b12]">
-        <OverviewCityHero students={students} currentUser={currentUser} onSelectStudent={selectStudentForModal} onStartQuiz={() => setActiveTab('quiz')} />
-      </section>
+      {/* ── PROCEDURAL OVERVIEW CITY ───────────────────────────────────── */}
+      <OverviewCityScene />
 
       {/* ── STATS BAR (Frosted Glass Cards) ─────────────────────────────── */}
       <section className="relative py-10 px-4 sm:px-6 lg:px-8">
