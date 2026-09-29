@@ -112,7 +112,7 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
             <stop offset="0" stopColor="#3aa0e6" /><stop offset="0.5" stopColor="#1f86d6" /><stop offset="1" stopColor="#1670c0" />
           </linearGradient>
           <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#3f8a2b" /><stop offset="1" stopColor="#1a4f1c" />
+            <stop offset="0" stopColor="#477f35" /><stop offset="0.42" stopColor="#326b2c" /><stop offset="1" stopColor="#173f1e" />
           </linearGradient>
           <linearGradient id="deck" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#3c434d" /><stop offset="1" stopColor="#14171d" />
@@ -158,10 +158,10 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           <line key={i} x1={400 + seeded(i) * 800} y1={75 + seeded(i + 3) * 150} x2={430 + seeded(i) * 800} y2={75 + seeded(i + 3) * 150} stroke="#bfe6ff" strokeWidth={0.8} opacity={0.35} />
         ))}
         {/* bridge */}
-        <path d="M700,104 Q900,96 1216,128" fill="none" stroke="#d3dbe2" strokeWidth={5} />
-        <path d="M700,110 Q900,102 1216,134" fill="none" stroke="#7c8896" strokeWidth={2.5} />
-        {Array.from({ length: 34 }).map((_, i) => {
-          const t = i / 33; const px = 700 + t * 516; const py = 104 + (1 - Math.pow(1 - t, 2)) * 0 + t * 24 - Math.sin(t * Math.PI) * 6;
+        <path d="M360,104 Q790,94 1216,128" fill="none" stroke="#d3dbe2" strokeWidth={5} />
+        <path d="M360,110 Q790,100 1216,134" fill="none" stroke="#7c8896" strokeWidth={2.5} />
+        {Array.from({ length: 58 }).map((_, i) => {
+          const t = i / 57; const px = 360 + t * 856; const py = 104 + t * 24 - Math.sin(t * Math.PI) * 6;
           return <g key={i}><rect x={px - 1} y={py + 4} width={2.4} height={16} fill="#a6b2be" /><path d={`M${px - 7},${py + 4} Q${px},${py - 9} ${px + 7},${py + 4}`} fill="none" stroke="#c5ced6" strokeWidth={1.4} /></g>;
         })}
         {/* islands */}
@@ -169,18 +169,13 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           <g key={i}><ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#1e5a26" /><ellipse cx={cx} cy={cy - ry * 0.4} rx={rx * 0.8} ry={ry * 0.7} fill="#2f7a34" /></g>
         ))}
 
-        {/* left forested hill */}
-        <path d="M0,0 L430,0 L360,60 L250,96 L120,120 L0,175 Z" fill="#2b5a2a" />
-        {Array.from({ length: 260 }).map((_, i) => {
-          const x = seeded(i + 700) * 420; const y = seeded(i + 730) * 150;
-          if (y > 175 - x * 0.42 + 0 && x < 40) return null;
-          if (y > 140 - x * 0.2 || x + y * 0.9 > 470) return null;
-          return <circle key={i} cx={x} cy={y} r={2.5 + seeded(i) * 3} fill={i % 7 === 0 ? '#8a4b2a' : i % 4 === 0 ? '#5a8a2e' : '#2a6a2a'} />;
-        })}
+        {/* Removed the oversized green foreground hill so the blue sky/water remains visible. */}
 
         {/* land */}
         <path d={`M0,120 L330,100 C360,110 400,130 440,150 C520,190 600,190 700,172 C800,160 880,178 950,205 C1050,232 1150,236 1216,242 L1216,${H} L0,${H} Z`} fill="url(#land)" />
-        <path d="M330,100 C360,110 400,130 440,150 C520,190 600,190 700,172 C800,160 880,178 950,205 C1050,232 1150,236 1216,242" fill="none" stroke="#bfe3a6" strokeWidth={1.6} opacity={0.5} />
+        <path d="M0,302 C190,250 300,300 460,260 S760,244 920,300 S1110,350 1216,316" fill="none" stroke="#75a64a" strokeWidth={24} opacity={0.08} />
+        <path d="M-20,450 C180,390 310,440 500,398 S840,370 1010,430 S1140,470 1240,438" fill="none" stroke="#0d351a" strokeWidth={34} opacity={0.13} />
+        <path d="M330,100 C360,110 400,130 440,150 C520,190 600,190 700,172 C800,160 880,178 950,205 C1050,232 1150,236 1216,242" fill="none" stroke="#a5c78a" strokeWidth={1.6} opacity={0.38} />
 
         {/* ground roads + ponds */}
         <ellipse cx="880" cy="424" rx="34" ry="12" fill="#3aa8c8" /><ellipse cx="960" cy="574" rx="46" ry="14" fill="#3aa8c8" />
@@ -259,39 +254,67 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           return items.map((it) => it.el);
         })()}
 
-        {/* central AWS tower */}
+        {/* central AWS tower — clean dark front and blue side, matching the reference */}
         <g>
-          <ellipse cx="588" cy="352" rx="134" ry="46" fill="none" stroke="#ff8a00" strokeWidth={3} filter="url(#glow)" />
-          <ellipse cx="590" cy="344" rx="98" ry="36" fill="#2a3346" />
-          <ellipse cx="590" cy="338" rx="84" ry="30" fill="#161c28" />
+          {/* broad circular foundation with orange illuminated perimeter */}
+          <ellipse cx="588" cy="352" rx="134" ry="46" fill="none" stroke="#ff8a00" strokeWidth={3.2} filter="url(#glow)" />
+          <ellipse cx="590" cy="344" rx="99" ry="36" fill="#303b4d" stroke="#5b687a" strokeWidth={1.2} />
+          <ellipse cx="590" cy="338" rx="85" ry="30" fill="#121a27" />
+          <ellipse cx="590" cy="331" rx="70" ry="22" fill="#1a2738" opacity={0.95} />
+
+          {/* tower body: left face is charcoal, right face is AWS blue */}
           <path d="M527,176 L527,330 A31,12 0 0 0 589,342 L589,178 Z" fill="url(#towerL)" />
           <path d="M589,178 L589,342 L646,330 L646,176 Z" fill="url(#towerR)" />
-          <path d="M527,176 A31,12 0 0 1 589,178 L646,176 L646,150 L589,140 L527,150 Z" fill="#1a2233" />
-          <line x1="531" y1="182" x2="531" y2="328" stroke="#ff8a00" strokeWidth={4} filter="url(#glow)" />
-          <line x1="643" y1="180" x2="643" y2="326" stroke="#ff8a00" strokeWidth={3} filter="url(#glow)" />
-          <path d="M527,300 Q590,340 646,300" fill="none" stroke="#ff8a00" strokeWidth={4} filter="url(#glow)" />
-          <path d="M527,236 Q590,262 646,236" fill="none" stroke="#ff8a00" strokeWidth={3} filter="url(#glow)" />
-          <rect x="603" y="128" width="42" height="34" fill="#1b4fc4" /><rect x="610" y="124" width="28" height="8" fill="#2a63e6" />
-          <line x1="606" y1="128" x2="606" y2="160" stroke="#ff8a00" strokeWidth={3} filter="url(#glow)" />
+          <path d="M527,176 L589,166 L646,176 L589,188 Z" fill="#111c2e" />
+          <path d="M527,176 L589,178 L589,342 A31,12 0 0 1 527,330 Z" fill="#141c29" opacity={0.72} />
+          <path d="M589,178 L646,176 L646,330 L589,342 Z" fill="#1646b2" opacity={0.72} />
+
+          {/* subtle edge highlights only; no vertical facade grid lines */}
+          <path d="M530,184 L530,326" fill="none" stroke="#6b829c" strokeWidth={1.2} opacity={0.22} />
+          <path d="M642,180 L642,328" fill="none" stroke="#8fcaff" strokeWidth={1.2} opacity={0.18} />
+
+          {/* orange illuminated wraparound bands */}
+          <path d="M527,300 Q590,340 646,300" fill="none" stroke="#ff8a00" strokeWidth={5.2} strokeLinecap="round" filter="url(#glow)" />
+          <path d="M527,236 Q590,262 646,236" fill="none" stroke="#ff8a00" strokeWidth={4.2} strokeLinecap="round" filter="url(#glow)" />
+
+          {/* rooftop blue mechanical crown */}
+          <rect x="603" y="128" width="42" height="48" rx="1" fill="#1b4fc4" />
+          <rect x="610" y="124" width="28" height="8" rx="2" fill="#2d70ea" />
+          <rect x="614" y="132" width="20" height="40" fill="#255bd0" opacity={0.58} />
+
+          {/* AWS wordmark and orange smile on blue face */}
           <text x="613" y="228" fontSize="27" fontWeight={800} fill="#fff" textAnchor="middle" fontFamily="system-ui,sans-serif" letterSpacing="-1">aws</text>
-          <path d="M594,236 Q612,246 632,232" fill="none" stroke="#ff9900" strokeWidth={3} strokeLinecap="round" />
-          {Array.from({ length: 6 }).map((_, i) => <rect key={i} x={539 + (i % 2) * 22} y={258 + Math.floor(i / 2) * 22} width={9} height={12} fill="#ffb648" opacity={0.7} />)}
+          <path d="M594,236 Q612,246 632,232" fill="none" stroke="#ff9900" strokeWidth={3.2} strokeLinecap="round" />
+
+          {/* warm square windows on the dark front face */}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <rect key={i} x={539 + (i % 2) * 22} y={258 + Math.floor(i / 2) * 22} width={9} height={12} rx={0.5} fill="#d99a3d" opacity={0.9} />
+          ))}
         </g>
 
         {/* elevated highway sweeping to the deck */}
         <path d="M-10,572 Q220,500 470,432 Q560,412 640,452 Q700,470 780,420 Q900,352 1010,290 Q1120,240 1216,236" fill="none" stroke="#5a6472" strokeWidth={11} />
         <path d="M-10,568 Q220,496 470,428 Q560,408 640,448 Q700,466 780,416 Q900,348 1010,286 Q1120,236 1216,232" fill="none" stroke="#b8c2cc" strokeWidth={2} />
-        <path d="M-10,576 Q220,504 470,436 Q560,416 640,456" fill="none" stroke="#ff8a00" strokeWidth={1.6} opacity={0.85} />
         <path d="M-10,565 Q220,492 470,424" fill="none" stroke="#4fa8ff" strokeWidth={1.4} opacity={0.9} />
         <path d="M640,452 Q700,470 780,420 Q900,352 1010,290" fill="none" stroke="#4fa8ff" strokeWidth={1.4} opacity={0.9} />
 
-        {/* foreground deck */}
+        {/* foreground road — asphalt with bold edge lines and thin center lane markings */}
         <path d={`M0,${H} L0,596 C90,540 250,500 430,497 C600,494 730,545 850,${H} Z`} fill="url(#deck)" />
-        <path d="M0,610 C100,556 260,516 430,512 C590,510 715,556 810,642" fill="none" stroke="#565e6a" strokeWidth={3} opacity={0.8} />
-        <path d="M282,548 L372,528" stroke="#ff8a00" strokeWidth={11} strokeLinecap="round" filter="url(#glow)" />
-        <path d="M446,519 Q520,514 592,538" stroke="#ff8a00" strokeWidth={11} strokeLinecap="round" fill="none" filter="url(#glow)" />
-        <path d="M258,613 L314,600" stroke="#ff7a00" strokeWidth={3} strokeLinecap="round" />
-        <path d="M660,612 L690,628" stroke="#ff7a00" strokeWidth={3} strokeLinecap="round" />
+
+        {/* strong continuous road-edge lines */}
+        <path d="M0,596 C90,540 250,500 430,497 C600,494 730,545 850,642" fill="none" stroke="#d8dee7" strokeWidth={8} opacity={0.96} />
+        <path d="M0,607 C96,551 256,511 430,508 C600,505 735,557 850,642" fill="none" stroke="#697482" strokeWidth={3} opacity={0.98} />
+        <path d="M0,621 C105,566 265,529 430,525 C585,523 710,567 815,642" fill="none" stroke="#111720" strokeWidth={2} opacity={0.95} />
+
+        {/* fine dashed lane divider lines, kept inside the roadway */}
+        <path d="M36,614 C115,576 202,548 291,531" fill="none" stroke="#f4f6f8" strokeWidth={2.2} strokeLinecap="round" strokeDasharray="20 17" opacity={0.95} />
+        <path d="M326,519 C371,509 416,505 461,506" fill="none" stroke="#f4f6f8" strokeWidth={2.2} strokeLinecap="round" strokeDasharray="18 16" opacity={0.95} />
+        <path d="M501,508 C545,512 585,525 621,541" fill="none" stroke="#f4f6f8" strokeWidth={2.2} strokeLinecap="round" strokeDasharray="17 15" opacity={0.95} />
+        <path d="M647,553 C679,568 709,588 738,611" fill="none" stroke="#f4f6f8" strokeWidth={2.2} strokeLinecap="round" strokeDasharray="15 13" opacity={0.95} />
+
+        {/* restrained orange guidance strips remain in the middle of the road */}
+        <path d="M282,548 L372,528" stroke="#ff8a00" strokeWidth={9} strokeLinecap="round" filter="url(#glow)" />
+        <path d="M446,519 Q520,514 592,538" stroke="#ff8a00" strokeWidth={9} strokeLinecap="round" fill="none" filter="url(#glow)" />
 
         {/* avatar (seen from behind) */}
         <g>
