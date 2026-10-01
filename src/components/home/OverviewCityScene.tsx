@@ -30,12 +30,38 @@ const GREENS = ['#17491a', '#1f5a1f', '#2c7a2a', '#3b9433', '#4aa53a', '#256b25'
 
 interface Tree { x: number; y: number; r: number; c: string; }
 
+const MAIN_ROAD_GUIDE: Array<[number, number]> = [
+  [608, 660], [430, 760], [760, 860], [580, 1010], [400, 1170], [760, 1320],
+  [610, 1490], [430, 1690], [770, 1810], [610, 1990], [420, 2180], [760, 2330],
+  [610, 2510], [520, 2630], [620, 2750], [610, 2920],
+];
+
+const pointToSegmentDistance = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  const cx = ax + t * dx;
+  const cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+};
+
+const isNearMainRoad = (x: number, y: number) => {
+  for (let i = 0; i < MAIN_ROAD_GUIDE.length - 1; i++) {
+    const [ax, ay] = MAIN_ROAD_GUIDE[i];
+    const [bx, by] = MAIN_ROAD_GUIDE[i + 1];
+    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 72) return true;
+  }
+  return false;
+};
+
 const TREES: Tree[] = (() => {
   const list: Tree[] = [];
   for (let i = 0; i < 1150; i++) {
     const x = 24 + seeded(i * 3 + 1) * (W - 48);
     const y = 620 + seeded(i * 3 + 2) * (H - 660);
     const r = 3 + seeded(i * 7 + 9) * 8;
+    if (isNearMainRoad(x, y)) continue;
     list.push({ x, y, r, c: GREENS[Math.floor(seeded(i * 5 + 4) * GREENS.length)] });
   }
   return list;
@@ -132,8 +158,8 @@ const Stadium: React.FC<{
 
 const SERVICE_MARKERS = [
   { label: 'AI/ML', Icon: BrainCircuit, x: 188, y: 790, action: 'quiz' },
-  { label: 'Analytics', Icon: BarChart3, x: 520, y: 705, action: 'quiz' },
-  { label: 'Developer Tools', Icon: Code2, x: 928, y: 845, action: 'quiz' },
+  { label: 'Analytics', Icon: BarChart3, x: 835, y: 710, action: 'quiz' },
+  { label: 'Developer Tools', Icon: Code2, x: 928, y: 920, action: 'quiz' },
   { label: 'Security', Icon: ShieldCheck, x: 190, y: 1265, action: 'explore' },
   { label: 'Storage', Icon: Database, x: 610, y: 1190, action: 'explore' },
   { label: 'Integration', Icon: Link2, x: 972, y: 1320, action: 'quiz' },
@@ -240,7 +266,7 @@ const serviceBuilding = (label: string, x: number, y: number) => {
 };
 
 export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
-  const road = 'M608,600 C430,720 760,850 580,1010 C400,1170 760,1320 610,1490 C430,1690 770,1810 610,1990 C420,2180 760,2330 610,2510 C520,2630 620,2750 610,2920';
+  const road = 'M608,660 C430,760 760,860 580,1010 C400,1170 760,1320 610,1490 C430,1690 770,1810 610,1990 C420,2180 760,2330 610,2510 C520,2630 620,2750 610,2920';
 
   return (
     <section className="relative w-full overflow-hidden bg-[#173f1e]">
@@ -301,6 +327,39 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         {/* Top atmosphere, mountains and water */}
         <path d="M0,245 L110,170 L205,218 L315,135 L430,215 L545,128 L670,208 L805,122 L930,202 L1050,138 L1216,205 L1216,330 L0,330 Z" fill="#6b8fb3" />
         <path d="M0,280 L145,225 L260,260 L380,192 L510,265 L650,185 L790,258 L920,195 L1040,250 L1160,205 L1216,230 L1216,350 L0,350 Z" fill="#8fb0c8" opacity={0.85} />
+
+        {/* Soft clouds above the mountain line */}
+        <g fill="#ffffff" opacity={0.58}>
+          <g transform="translate(112 88)">
+            <ellipse cx="0" cy="22" rx="42" ry="16" />
+            <ellipse cx="-24" cy="15" rx="25" ry="20" />
+            <ellipse cx="5" cy="8" rx="30" ry="25" />
+            <ellipse cx="30" cy="17" rx="24" ry="18" />
+          </g>
+          <g transform="translate(430 58) scale(0.88)">
+            <ellipse cx="0" cy="22" rx="44" ry="16" />
+            <ellipse cx="-26" cy="15" rx="24" ry="19" />
+            <ellipse cx="4" cy="7" rx="31" ry="25" />
+            <ellipse cx="32" cy="17" rx="23" ry="17" />
+          </g>
+          <g transform="translate(760 100) scale(1.05)">
+            <ellipse cx="0" cy="22" rx="44" ry="16" />
+            <ellipse cx="-27" cy="15" rx="24" ry="19" />
+            <ellipse cx="4" cy="7" rx="31" ry="25" />
+            <ellipse cx="34" cy="17" rx="24" ry="18" />
+          </g>
+          <g transform="translate(1060 62) scale(0.92)">
+            <ellipse cx="0" cy="22" rx="43" ry="16" />
+            <ellipse cx="-25" cy="15" rx="24" ry="19" />
+            <ellipse cx="4" cy="7" rx="30" ry="24" />
+            <ellipse cx="32" cy="17" rx="23" ry="17" />
+          </g>
+        </g>
+        <g fill="#eaf5ff" opacity={0.42}>
+          <ellipse cx="275" cy="170" rx="74" ry="20" />
+          <ellipse cx="930" cy="185" rx="86" ry="22" />
+        </g>
+
         <rect y="300" width={W} height="220" fill="url(#cityWater)" />
         {Array.from({ length: 42 }).map((_, i) => {
           const x = 25 + seeded(i + 80) * (W - 50);
@@ -308,7 +367,7 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           return <line key={i} x1={x} y1={y} x2={x + 28} y2={y} stroke="#bfe6ff" strokeWidth={1} opacity={0.35} />;
         })}
 
-        {/* Bridge carrying the city from the opening scene into the first district */}
+        {/* Bridge remains behind the landmark tower. */}
         <path d="M0,420 Q280,350 610,420 T1216,395" fill="none" stroke="#d3dbe2" strokeWidth={14} />
         <path d="M0,420 Q280,350 610,420 T1216,395" fill="none" stroke="#697482" strokeWidth={4} />
         {Array.from({ length: 48 }).map((_, i) => {
@@ -316,31 +375,12 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           const px = 20 + t * 1176;
           const py = 420 - Math.sin(t * Math.PI) * 52;
           return (
-            <g key={i}>
+            <g key={`top-bridge-${i}`}>
               <line x1={px} y1={py - 2} x2={px} y2={py - 18} stroke="#a6b2be" strokeWidth={2} />
               <path d={`M${px - 8},${py - 4} Q${px},${py - 20} ${px + 8},${py - 4}`} fill="none" stroke="#c5ced6" strokeWidth={1.5} />
             </g>
           );
         })}
-
-        {/* AWS landmark tower: the visual anchor of the whole city */}
-        <g>
-          <ellipse cx="608" cy="570" rx="154" ry="48" fill="none" stroke="#ff8a00" strokeWidth={3.2} filter="url(#cityGlow)" />
-          <ellipse cx="608" cy="560" rx="112" ry="38" fill="#303b4d" stroke="#5b687a" strokeWidth={1.2} />
-          <ellipse cx="608" cy="552" rx="94" ry="31" fill="#121a27" />
-          <path d="M540,370 L540,540 A34,14 0 0 0 608,554 L608,372 Z" fill="url(#towerLeft)" />
-          <path d="M608,372 L676,370 L676,540 L608,554 Z" fill="url(#towerRight)" />
-          <path d="M540,370 L608,360 L676,370 L608,382 Z" fill="#111c2e" />
-          <path d="M540,494 Q608,534 676,494" fill="none" stroke="#ff8a00" strokeWidth={5} strokeLinecap="round" filter="url(#cityGlow)" />
-          <path d="M540,432 Q608,458 676,432" fill="none" stroke="#ff8a00" strokeWidth={4} strokeLinecap="round" filter="url(#cityGlow)" />
-          <rect x="622" y="316" width="48" height="54" rx="2" fill="#1b4fc4" />
-          <rect x="629" y="311" width="34" height="9" rx="2" fill="#2d70ea" />
-          <text x="642" y="425" fontSize="28" fontWeight={800} fill="#fff" textAnchor="middle" fontFamily="system-ui,sans-serif">aws</text>
-          <path d="M620,434 Q642,446 663,432" fill="none" stroke="#ff9900" strokeWidth="3.2" strokeLinecap="round" />
-          {Array.from({ length: 6 }).map((_, i) => (
-            <rect key={i} x={551 + (i % 2) * 25} y={454 + Math.floor(i / 2) * 24} width={10} height={13} rx={1} fill="#d99a3d" opacity={0.9} />
-          ))}
-        </g>
 
         {/* City ground / district bands */}
         <path d={`M0,520 C220,470 350,560 520,520 S820,470 980,540 S1120,570 ${W},525 L${W},${H} L0,${H} Z`} fill="url(#cityLand)" />
@@ -349,11 +389,71 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         <path d="M0,2100 C180,2020 340,2130 520,2070 S860,2030 1216,2130" fill="none" stroke="#75a64a" strokeWidth={42} opacity={0.08} />
         <path d="M0,2660 C180,2580 340,2680 520,2630 S860,2590 1216,2690" fill="none" stroke="#75a64a" strokeWidth={42} opacity={0.08} />
 
+        {/* AWS landmark tower — anchored on the green land with a visible circular base. */}
+        <g>
+          <path d="M536,370 L536,548 A36,16 0 0 0 608,566 L608,370 Z" fill="url(#towerLeft)" />
+          <path d="M608,370 L680,368 L680,548 L608,566 Z" fill="url(#towerRight)" />
+          <path d="M536,370 L608,358 L680,368 L608,380 Z" fill="#111c2e" />
+
+          <path d="M536,493 Q608,534 680,493" fill="none" stroke="#ff8a00" strokeWidth={5} strokeLinecap="round" filter="url(#cityGlow)" />
+          <path d="M536,432 Q608,458 680,432" fill="none" stroke="#ff8a00" strokeWidth={4} strokeLinecap="round" filter="url(#cityGlow)" />
+
+          <rect x="622" y="316" width="48" height="54" rx="2" fill="#1b4fc4" />
+          <rect x="629" y="311" width="34" height="9" rx="2" fill="#2d70ea" />
+          <path d="M646,305 L646,278" stroke="#ff9900" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="646" cy="273" r="6" fill="#ff9900" filter="url(#cityGlow)" />
+
+          <text x="642" y="425" fontSize="28" fontWeight={800} fill="#fff" textAnchor="middle" fontFamily="system-ui,sans-serif">aws</text>
+          <path d="M620,434 Q642,446 663,432" fill="none" stroke="#ff9900" strokeWidth="3.2" strokeLinecap="round" />
+
+          {Array.from({ length: 6 }).map((_, i) => (
+            <rect
+              key={`tower-window-${i}`}
+              x={547 + (i % 2) * 25}
+              y={454 + Math.floor(i / 2) * 24}
+              width={10}
+              height={13}
+              rx={1}
+              fill="#d99a3d"
+              opacity={0.9}
+            />
+          ))}
+        </g>
+
         {/* District water bodies */}
         <ellipse cx="1040" cy="1040" rx="132" ry="48" fill="url(#cityWater)" opacity={0.95} />
         <ellipse cx="220" cy="1560" rx="150" ry="54" fill="url(#cityWater)" opacity={0.95} />
         <ellipse cx="1020" cy="2120" rx="156" ry="54" fill="url(#cityWater)" opacity={0.95} />
         <ellipse cx="240" cy="2780" rx="180" ry="62" fill="url(#cityWater)" opacity={0.95} />
+
+        {/* Small shoreline accents for the bottom-left pond. */}
+        <path d="M84,2764 Q240,2708 398,2768" fill="none" stroke="#5b8d45" strokeWidth={7} opacity={0.8} />
+        <path d="M92,2801 Q235,2854 388,2798" fill="none" stroke="#8fc56a" strokeWidth={3} opacity={0.55} />
+
+        {/* Side roads now physically meet the main black road instead of stopping short. */}
+        {[
+          // Intelligence district
+          'M70,940 Q300,900 635,900',
+          'M1120,900 Q900,885 635,900',
+          // Foundation district
+          'M70,1340 Q300,1285 630,1340',
+          'M1135,1380 Q900,1340 630,1340',
+          // Core cloud district
+          'M80,1850 Q320,1790 580,1790',
+          'M1135,1890 Q900,1845 640,1840',
+          // Operations district
+          'M75,2340 Q300,2300 625,2320',
+          'M1125,2390 Q900,2350 625,2320',
+          // Bottom pond-side access
+          'M90,2700 Q260,2660 565,2630',
+        ].map((d, i) => (
+          <g key={`connector-${i}`}>
+            <path d={d} fill="none" stroke="#1b2028" strokeWidth={50} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="#59636e" strokeWidth={43} strokeLinecap="round" />
+            <path d={d} fill="none" stroke="#f1f3f5" strokeWidth={2} strokeDasharray="16 14" strokeLinecap="round" />
+          </g>
+        ))}
+
 
         {/* Continuous main road: thick edge, thin lane divider and orange guidance */}
         <path d={road} fill="none" stroke="#12161c" strokeWidth={112} strokeLinecap="round" />
@@ -361,26 +461,7 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         <path d={road} fill="none" stroke="#d8dee7" strokeWidth={6} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#111720" strokeWidth={88} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#f4f6f8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="20 18" />
-        <path d="M608,630 C500,760 720,850 590,1010 C500,1125 650,1225 620,1360 C590,1490 700,1600 610,1735 C520,1870 700,1980 620,2120 C535,2250 710,2380 615,2520 C570,2600 620,2720 610,2860" fill="none" stroke="#ff8a00" strokeWidth={7} strokeLinecap="round" opacity={0.85} filter="url(#cityGlow)" />
-
-        {/* Smaller connecting roads */}
-        {[
-          'M80,940 Q240,900 360,820',
-          'M720,780 Q850,820 1060,760',
-          'M90,1340 Q250,1290 390,1250',
-          'M760,1250 Q900,1290 1130,1380',
-          'M100,1850 Q240,1790 360,1760',
-          'M760,1770 Q900,1820 1130,1890',
-          'M90,2340 Q250,2290 400,2320',
-          'M760,2310 Q900,2260 1120,2390',
-          'M120,2700 Q270,2660 430,2600',
-        ].map((d, i) => (
-          <g key={i}>
-            <path d={d} fill="none" stroke="#1b2028" strokeWidth={46} strokeLinecap="round" />
-            <path d={d} fill="none" stroke="#59636e" strokeWidth={40} strokeLinecap="round" />
-            <path d={d} fill="none" stroke="#f1f3f5" strokeWidth={1.8} strokeDasharray="15 13" />
-          </g>
-        ))}
+        <path d="M608,685 C500,770 720,855 590,1010 C500,1125 650,1225 620,1360 C590,1490 700,1600 610,1735 C520,1870 700,1980 620,2120 C535,2250 710,2380 615,2520 C570,2600 620,2720 610,2860" fill="none" stroke="#ff8a00" strokeWidth={7} strokeLinecap="round" opacity={0.85} filter="url(#cityGlow)" />
 
         {/* Bridges between districts */}
         {[
@@ -408,28 +489,50 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           </g>
         ))}
 
-        {/* Secondary city buildings: deliberately small and scattered */}
-        {Array.from({ length: 54 }).map((_, i) => {
-          const x = 50 + seeded(i * 11 + 3) * 1110;
-          const y = 680 + seeded(i * 13 + 7) * 2110;
-          const w = 24 + seeded(i * 17 + 5) * 42;
-          const h = 34 + seeded(i * 19 + 2) * 82;
-          if (Math.abs(x - 608) < 75) return null;
-          return (
-            <Box
-              key={`minor-${i}`}
-              x={x}
-              y={y}
-              w={w}
-              h={h}
-              d={10 + seeded(i + 33) * 10}
-              front={i % 4 === 0 ? '#4b5d75' : '#71839a'}
-              side={i % 4 === 0 ? '#29384d' : '#4c5b70'}
-              top="#9babbf"
-              glow={i % 5 === 0 ? '#4fa8ff' : undefined}
-            />
-          );
-        })}
+        {/* Curated demo buildings: placed intentionally in open green zones, away from service landmarks and the main road. */}
+        {[
+          { x: 88, y: 760, w: 58, h: 112, front: '#60758d', side: '#3b4d63', top: '#a9b9c9', roof: '#d6dee6' },
+          { x: 400, y: 650, w: 70, h: 128, front: '#71859b', side: '#485b70', top: '#b1bfcc', roof: '#e2e8ee' },
+          { x: 1085, y: 675, w: 68, h: 118, front: '#667b91', side: '#405369', top: '#aab9c8', roof: '#dce4eb' },
+          { x: 1140, y: 1040, w: 56, h: 104, front: '#74879a', side: '#4b5d71', top: '#b1bfcc', roof: '#e2e8ee' },
+
+          { x: 95, y: 1120, w: 64, h: 118, front: '#657a90', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
+          { x: 365, y: 1180, w: 72, h: 126, front: '#74879a', side: '#4b5d71', top: '#afbdca', roof: '#e2e8ee' },
+          { x: 1040, y: 1215, w: 64, h: 112, front: '#60758c', side: '#3b4f65', top: '#a8b8c7', roof: '#dce4eb' },
+
+          { x: 105, y: 1640, w: 68, h: 126, front: '#6c8197', side: '#42566b', top: '#adbdca', roof: '#e0e7ed' },
+          { x: 350, y: 1760, w: 72, h: 112, front: '#5e738a', side: '#394d63', top: '#a4b5c5', roof: '#dce4eb' },
+          { x: 1030, y: 1690, w: 70, h: 130, front: '#72869a', side: '#4a5d72', top: '#afbdca', roof: '#e2e8ee' },
+          { x: 1135, y: 2020, w: 58, h: 106, front: '#65798f', side: '#405267', top: '#a8b8c7', roof: '#dce4eb' },
+
+          { x: 105, y: 2160, w: 68, h: 120, front: '#667b91', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
+          { x: 355, y: 2280, w: 62, h: 108, front: '#73879a', side: '#4b5d72', top: '#b0becb', roof: '#e1e7ed' },
+          { x: 1045, y: 2260, w: 72, h: 122, front: '#61768d', side: '#3d5166', top: '#a7b7c6', roof: '#dce4eb' },
+          { x: 1140, y: 2540, w: 62, h: 110, front: '#73869a', side: '#4b5c70', top: '#adbdca', roof: '#e0e7ed' },
+
+          { x: 465, y: 820, w: 48, h: 76, front: '#536a82', side: '#34485e', top: '#9daec0', roof: '#d9e1e8' },
+          { x: 1080, y: 1460, w: 52, h: 84, front: '#526980', side: '#34485d', top: '#9eafc0', roof: '#d9e1e8' },
+          { x: 450, y: 2050, w: 54, h: 88, front: '#5a7087', side: '#394d63', top: '#a1b2c2', roof: '#dbe3e9' },
+          { x: 785, y: 2450, w: 58, h: 94, front: '#60758b', side: '#3c5065', top: '#a6b6c5', roof: '#dce4ea' },
+        ].map((b, i) => (
+          <g key={`curated-demo-${i}`}>
+            <Box x={b.x} y={b.y} w={b.w} h={b.h} d={14} front={b.front} side={b.side} top={b.top} />
+            <rect x={b.x - b.w / 2 + 7} y={b.y - b.h - 7} width={b.w - 14} height={4} rx={2} fill={b.roof} opacity={0.8} />
+            {i % 3 === 0 && (
+              <g>
+                <rect x={b.x + b.w / 2 - 17} y={b.y - b.h - 18} width={8} height={11} rx={2} fill="#657383" />
+                <rect x={b.x + b.w / 2 - 8} y={b.y - b.h - 15} width={3} height={8} fill="#ff9900" opacity={0.75} />
+              </g>
+            )}
+          </g>
+        ))}
+
+        {/* Aligned buildings around the lower-left pond. They share a clean baseline and stay outside the water/bridge. */}
+        <g>
+          <Box x={105} y={2680} w={62} h={108} d={14} front="#687c92" side="#405269" top="#a9b9c8" />
+          <Box x={405} y={2670} w={70} h={124} d={14} front="#74879b" side="#4b5d71" top="#acbbc9" />
+          <Box x={430} y={2870} w={58} h={92} d={14} front="#5f7389" side="#3d5065" top="#a3b3c4" />
+        </g>
 
         {/* Service districts */}
         {DISTRICTS.map((d) => (
