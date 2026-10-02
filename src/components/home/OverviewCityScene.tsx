@@ -14,7 +14,7 @@ type Props = { onExplore: () => void; onQuiz: () => void };
  * - Service districts are deliberately spaced vertically so the city never
  *   feels like a pile of buildings.
  * - One continuous road spine connects every district.
- * - Water, bridges, parks, trees and secondary buildings continue between
+ * - Natural landscaping and secondary buildings continue between
  *   service landmarks.
  * - The component remains pure SVG: no image asset, canvas or WebGL required.
  */
@@ -26,9 +26,7 @@ const seeded = (n: number) => {
   return x - Math.floor(x);
 };
 
-const GREENS = ['#17491a', '#1f5a1f', '#2c7a2a', '#3b9433', '#4aa53a', '#256b25'];
-
-interface Tree { x: number; y: number; r: number; c: string; }
+interface Tree { x: number; y: number; s: number; type: number; }
 
 const MAIN_ROAD_GUIDE: Array<[number, number]> = [
   [608, 660], [430, 760], [760, 860], [580, 1010], [400, 1170], [760, 1320],
@@ -36,7 +34,6 @@ const MAIN_ROAD_GUIDE: Array<[number, number]> = [
   [610, 2510], [520, 2630], [620, 2750], [610, 2920],
 ];
 
-// Grey connector roads are also kept tree-free so the roads stay clean and readable.
 const SIDE_ROAD_SEGMENTS: Array<[[number, number], [number, number]]> = [
   [[70, 940], [635, 900]], [[1120, 900], [635, 900]],
   [[70, 1340], [630, 1340]], [[1135, 1380], [630, 1340]],
@@ -59,22 +56,24 @@ const isNearRoad = (x: number, y: number) => {
   for (let i = 0; i < MAIN_ROAD_GUIDE.length - 1; i++) {
     const [ax, ay] = MAIN_ROAD_GUIDE[i];
     const [bx, by] = MAIN_ROAD_GUIDE[i + 1];
-    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 78) return true;
+    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 92) return true;
   }
   for (const [[ax, ay], [bx, by]] of SIDE_ROAD_SEGMENTS) {
-    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 42) return true;
+    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 55) return true;
   }
   return false;
 };
 
+// Fewer, deliberately placed trees replace the old dot-like procedural greenery.
+// Every tree is substantially smaller than the service buildings and stays clear of roads.
 const TREES: Tree[] = (() => {
   const list: Tree[] = [];
-  for (let i = 0; i < 1150; i++) {
-    const x = 24 + seeded(i * 3 + 1) * (W - 48);
-    const y = 620 + seeded(i * 3 + 2) * (H - 660);
-    const r = 3 + seeded(i * 7 + 9) * 8;
+  for (let i = 0; i < 280; i++) {
+    const x = 32 + seeded(i * 3 + 1) * (W - 64);
+    const y = 610 + seeded(i * 3 + 2) * (H - 680);
     if (isNearRoad(x, y)) continue;
-    list.push({ x, y, r, c: GREENS[Math.floor(seeded(i * 5 + 4) * GREENS.length)] });
+    const s = 0.72 + seeded(i * 7 + 9) * 0.5;
+    list.push({ x, y, s, type: Math.floor(seeded(i * 5 + 4) * 3) });
   }
   return list;
 })();
@@ -171,23 +170,23 @@ const Stadium: React.FC<{
 const SERVICE_MARKERS = [
   { label: 'AI/ML', Icon: BrainCircuit, x: 188, y: 790, action: 'quiz' },
   { label: 'Analytics', Icon: BarChart3, x: 835, y: 710, action: 'quiz' },
-  { label: 'Developer Tools', Icon: Code2, x: 928, y: 990, action: 'quiz' },
+  { label: 'Developer Tools', Icon: Code2, x: 928, y: 1000, action: 'quiz' },
   { label: 'Security', Icon: ShieldCheck, x: 190, y: 1440, action: 'explore' },
   { label: 'Storage', Icon: Database, x: 790, y: 1120, action: 'explore' },
-  { label: 'Integration', Icon: Link2, x: 972, y: 1405, action: 'quiz' },
-  { label: 'Compute', Icon: Cpu, x: 250, y: 1790, action: 'explore' },
-  { label: 'Networking', Icon: Network, x: 640, y: 1720, action: 'explore' },
-  { label: 'Community Center', Icon: Building2, x: 1005, y: 1850, action: 'explore' },
-  { label: 'Management', Icon: Settings, x: 280, y: 2310, action: 'explore' },
-  { label: 'IoT', Icon: RadioTower, x: 690, y: 2250, action: 'explore' },
-  { label: 'Challenge Zone', Icon: Zap, x: 1010, y: 2500, action: 'quiz' },
+  { label: 'Integration', Icon: Link2, x: 900, y: 1405, action: 'quiz' },
+  { label: 'Compute', Icon: Cpu, x: 290, y: 1890, action: 'explore' },
+  { label: 'Networking', Icon: Network, x: 800, y: 1675, action: 'explore' },
+  { label: 'Community Center', Icon: Building2, x: 900, y: 1900, action: 'explore' },
+  { label: 'Management', Icon: Settings, x: 280, y: 2360, action: 'explore' },
+  { label: 'IoT', Icon: RadioTower, x: 850, y: 2180, action: 'explore' },
+  { label: 'Challenge Zone', Icon: Zap, x: 890, y: 2500, action: 'quiz' },
 ] as const;
 
 const DISTRICTS = [
-  { y: 700, title: 'INTELLIGENCE DISTRICT', subtitle: 'AI, analytics and developer infrastructure' },
-  { y: 1160, title: 'FOUNDATION DISTRICT', subtitle: 'Security, storage and service integration' },
-  { y: 1690, title: 'CORE CLOUD DISTRICT', subtitle: 'Compute, networking and community' },
-  { y: 2240, title: 'OPERATIONS DISTRICT', subtitle: 'Management, IoT and the challenge zone' },
+  { y: 700, title: 'INTELLIGENCE DISTRICT' },
+  { y: 1160, title: 'FOUNDATION DISTRICT' },
+  { y: 1690, title: 'CORE CLOUD DISTRICT' },
+  { y: 2240, title: 'OPERATIONS DISTRICT' },
 ] as const;
 
 const serviceBuilding = (label: string, x: number, y: number) => {
@@ -432,15 +431,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           ))}
         </g>
 
-        {/* District water bodies */}
-        <ellipse cx="220" cy="1560" rx="150" ry="54" fill="url(#cityWater)" opacity={0.95} />
-        <ellipse cx="1020" cy="2120" rx="156" ry="54" fill="url(#cityWater)" opacity={0.95} />
-        <ellipse cx="240" cy="2780" rx="180" ry="62" fill="url(#cityWater)" opacity={0.95} />
-
-        {/* Small shoreline accents for the bottom-left pond. */}
-        <path d="M84,2764 Q240,2708 398,2768" fill="none" stroke="#5b8d45" strokeWidth={7} opacity={0.8} />
-        <path d="M92,2801 Q235,2854 388,2798" fill="none" stroke="#8fc56a" strokeWidth={3} opacity={0.55} />
-
         {/* Side roads now physically meet the main black road instead of stopping short. */}
         {[
           // Intelligence district
@@ -455,8 +445,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           // Operations district
           'M75,2340 Q300,2300 625,2320',
           'M1125,2390 Q900,2350 625,2320',
-          // Bottom pond-side access
-          'M90,2700 Q260,2660 565,2630',
         ].map((d, i) => (
           <g key={`connector-${i}`}>
             <path d={d} fill="none" stroke="#1b2028" strokeWidth={50} strokeLinecap="round" />
@@ -473,30 +461,40 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         <path d={road} fill="none" stroke="#111720" strokeWidth={88} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#f4f6f8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="20 18" />
 
-        {/* Bridges between districts */}
-        {[
-          { y: 1560, x1: 70, x2: 380 },
-          { y: 2120, x1: 850, x2: 1180 },
-          { y: 2780, x1: 60, x2: 420 },
-        ].map((b, i) => (
-          <g key={i}>
-            <path d={`M${b.x1},${b.y} Q${(b.x1 + b.x2) / 2},${b.y - 22} ${b.x2},${b.y}`} fill="none" stroke="#d3dbe2" strokeWidth={18} />
-            <path d={`M${b.x1},${b.y} Q${(b.x1 + b.x2) / 2},${b.y - 22} ${b.x2},${b.y}`} fill="none" stroke="#68737f" strokeWidth={5} />
-            {Array.from({ length: 9 }).map((_, j) => {
-              const x = b.x1 + ((b.x2 - b.x1) * j) / 8;
-              return <line key={j} x1={x} y1={b.y - 4} x2={x} y2={b.y - 23} stroke="#aab5c0" strokeWidth={2} />;
-            })}
-          </g>
-        ))}
-
-        {/* Procedural greenery, behind service landmarks */}
-        {TREES.map((t, i) => (
-          <g key={`tree-${i}`}>
-            <circle cx={t.x} cy={t.y + t.r * 0.35} r={t.r} fill="#0f3a12" opacity={0.55} />
-            <circle cx={t.x} cy={t.y} r={t.r} fill={t.c} />
-            <circle cx={t.x - t.r * 0.28} cy={t.y - t.r * 0.32} r={t.r * 0.5} fill="#7cc65a" opacity={0.32} />
-          </g>
-        ))}
+        {/* Natural landscaping, kept away from every road */}
+        {TREES.map((t, i) => {
+          const { x, y, s: scale, type } = t;
+          const canopy = 15 * scale;
+          return (
+            <g key={`tree-${i}`} transform={`translate(${x} ${y})`}>
+              <ellipse cx="0" cy="18" rx={14 * scale} ry={4 * scale} fill="#163b18" opacity={0.22} />
+              <rect x={-2.5 * scale} y={0} width={5 * scale} height={15 * scale} rx={2 * scale} fill="#684529" />
+              {type === 0 && (
+                <g>
+                  <circle cx={0} cy={-12 * scale} r={canopy} fill="#205d26" />
+                  <circle cx={-10 * scale} cy={-7 * scale} r={canopy * 0.72} fill="#2f7d31" />
+                  <circle cx={10 * scale} cy={-7 * scale} r={canopy * 0.68} fill="#3d9137" />
+                  <circle cx={-4 * scale} cy={-19 * scale} r={canopy * 0.48} fill="#5aa846" />
+                </g>
+              )}
+              {type === 1 && (
+                <g>
+                  <path d={`M0,${-4 * scale} C${-16 * scale},${-12 * scale} ${-15 * scale},${-29 * scale} 0,${-39 * scale} C${15 * scale},${-29 * scale} ${16 * scale},${-12 * scale} 0,${-4 * scale} Z`} fill="#2e7830" />
+                  <path d={`M0,${-10 * scale} C${-10 * scale},${-19 * scale} ${-8 * scale},${-33 * scale} 0,${-41 * scale} C${8 * scale},${-33 * scale} ${10 * scale},${-19 * scale} 0,${-10 * scale} Z`} fill="#4b9b3d" />
+                  <circle cx={-3 * scale} cy={-28 * scale} r={3.5 * scale} fill="#79b95b" opacity={0.75} />
+                </g>
+              )}
+              {type === 2 && (
+                <g>
+                  <circle cx={-8 * scale} cy={-12 * scale} r={12 * scale} fill="#236528" />
+                  <circle cx={9 * scale} cy={-14 * scale} r={14 * scale} fill="#327f31" />
+                  <circle cx={0} cy={-23 * scale} r={13 * scale} fill="#4a9639" />
+                  <circle cx={-5 * scale} cy={-27 * scale} r={5 * scale} fill="#73b856" opacity={0.72} />
+                </g>
+              )}
+            </g>
+          );
+        })}
 
         {/* Curated demo buildings: placed intentionally in open green zones, away from service landmarks and the main road. */}
         {[
@@ -535,22 +533,12 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           </g>
         ))}
 
-        {/* Aligned buildings around the lower-left pond. They share a clean baseline and stay outside the water/bridge. */}
-        <g>
-          <Box x={105} y={2680} w={62} h={108} d={14} front="#687c92" side="#405269" top="#a9b9c8" />
-          <Box x={405} y={2670} w={70} h={124} d={14} front="#74879b" side="#4b5d71" top="#acbbc9" />
-          <Box x={430} y={2870} w={58} h={92} d={14} front="#5f7389" side="#3d5065" top="#a3b3c4" />
-        </g>
-
         {/* Service districts */}
         {DISTRICTS.map((d) => (
           <g key={d.title}>
             <rect x="42" y={d.y - 38} width="350" height="34" rx="17" fill="#10161f" opacity={0.76} />
             <text x="62" y={d.y - 16} fontSize="13" fontWeight={800} fill="#ffad33" fontFamily="system-ui,sans-serif" letterSpacing="2">
               {d.title}
-            </text>
-            <text x="410" y={d.y - 16} fontSize="11" fill="#dce5ef" opacity={0.72} fontFamily="system-ui,sans-serif">
-              {d.subtitle}
             </text>
           </g>
         ))}
@@ -559,21 +547,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         {SERVICE_MARKERS.map(({ label, x, y }) => (
           <g key={`building-${label}`}>
             {serviceBuilding(label, x, y)}
-          </g>
-        ))}
-
-        {/* Small parks around each district */}
-        {[
-          [95, 740], [740, 720], [1015, 910],
-          [90, 1160], [810, 1130], [1060, 1460],
-          [90, 1680], [820, 1660], [1080, 2020],
-          [90, 2200], [830, 2190], [1080, 2640],
-        ].map(([x, y], i) => (
-          <g key={`park-${i}`}>
-            <ellipse cx={x} cy={y} rx="62" ry="24" fill="#286b2b" opacity={0.9} />
-            <circle cx={x - 28} cy={y - 4} r={9} fill="#4aa53a" />
-            <circle cx={x} cy={y + 3} r={11} fill="#3b9433" />
-            <circle cx={x + 30} cy={y - 3} r={8} fill="#2c7a2a" />
           </g>
         ))}
 
