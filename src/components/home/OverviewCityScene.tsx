@@ -36,6 +36,15 @@ const MAIN_ROAD_GUIDE: Array<[number, number]> = [
   [610, 2510], [520, 2630], [620, 2750], [610, 2920],
 ];
 
+// Grey connector roads are also kept tree-free so the roads stay clean and readable.
+const SIDE_ROAD_SEGMENTS: Array<[[number, number], [number, number]]> = [
+  [[70, 940], [635, 900]], [[1120, 900], [635, 900]],
+  [[70, 1340], [630, 1340]], [[1135, 1380], [630, 1340]],
+  [[80, 1850], [580, 1790]], [[1135, 1890], [640, 1840]],
+  [[75, 2340], [625, 2320]], [[1125, 2390], [625, 2320]],
+  [[90, 2700], [565, 2630]],
+];
+
 const pointToSegmentDistance = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
   const dx = bx - ax;
   const dy = by - ay;
@@ -46,11 +55,14 @@ const pointToSegmentDistance = (px: number, py: number, ax: number, ay: number, 
   return Math.hypot(px - cx, py - cy);
 };
 
-const isNearMainRoad = (x: number, y: number) => {
+const isNearRoad = (x: number, y: number) => {
   for (let i = 0; i < MAIN_ROAD_GUIDE.length - 1; i++) {
     const [ax, ay] = MAIN_ROAD_GUIDE[i];
     const [bx, by] = MAIN_ROAD_GUIDE[i + 1];
-    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 72) return true;
+    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 78) return true;
+  }
+  for (const [[ax, ay], [bx, by]] of SIDE_ROAD_SEGMENTS) {
+    if (pointToSegmentDistance(x, y, ax, ay, bx, by) < 42) return true;
   }
   return false;
 };
@@ -61,7 +73,7 @@ const TREES: Tree[] = (() => {
     const x = 24 + seeded(i * 3 + 1) * (W - 48);
     const y = 620 + seeded(i * 3 + 2) * (H - 660);
     const r = 3 + seeded(i * 7 + 9) * 8;
-    if (isNearMainRoad(x, y)) continue;
+    if (isNearRoad(x, y)) continue;
     list.push({ x, y, r, c: GREENS[Math.floor(seeded(i * 5 + 4) * GREENS.length)] });
   }
   return list;
@@ -159,10 +171,10 @@ const Stadium: React.FC<{
 const SERVICE_MARKERS = [
   { label: 'AI/ML', Icon: BrainCircuit, x: 188, y: 790, action: 'quiz' },
   { label: 'Analytics', Icon: BarChart3, x: 835, y: 710, action: 'quiz' },
-  { label: 'Developer Tools', Icon: Code2, x: 928, y: 920, action: 'quiz' },
-  { label: 'Security', Icon: ShieldCheck, x: 190, y: 1265, action: 'explore' },
-  { label: 'Storage', Icon: Database, x: 610, y: 1190, action: 'explore' },
-  { label: 'Integration', Icon: Link2, x: 972, y: 1320, action: 'quiz' },
+  { label: 'Developer Tools', Icon: Code2, x: 928, y: 990, action: 'quiz' },
+  { label: 'Security', Icon: ShieldCheck, x: 190, y: 1440, action: 'explore' },
+  { label: 'Storage', Icon: Database, x: 790, y: 1120, action: 'explore' },
+  { label: 'Integration', Icon: Link2, x: 972, y: 1405, action: 'quiz' },
   { label: 'Compute', Icon: Cpu, x: 250, y: 1790, action: 'explore' },
   { label: 'Networking', Icon: Network, x: 640, y: 1720, action: 'explore' },
   { label: 'Community Center', Icon: Building2, x: 1005, y: 1850, action: 'explore' },
@@ -421,7 +433,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         </g>
 
         {/* District water bodies */}
-        <ellipse cx="1040" cy="1040" rx="132" ry="48" fill="url(#cityWater)" opacity={0.95} />
         <ellipse cx="220" cy="1560" rx="150" ry="54" fill="url(#cityWater)" opacity={0.95} />
         <ellipse cx="1020" cy="2120" rx="156" ry="54" fill="url(#cityWater)" opacity={0.95} />
         <ellipse cx="240" cy="2780" rx="180" ry="62" fill="url(#cityWater)" opacity={0.95} />
@@ -455,17 +466,15 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         ))}
 
 
-        {/* Continuous main road: thick edge, thin lane divider and orange guidance */}
+        {/* Continuous main road: thick edge and clean white lane divider */}
         <path d={road} fill="none" stroke="#12161c" strokeWidth={112} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#4b5561" strokeWidth={100} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#d8dee7" strokeWidth={6} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#111720" strokeWidth={88} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#f4f6f8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="20 18" />
-        <path d="M608,685 C500,770 720,855 590,1010 C500,1125 650,1225 620,1360 C590,1490 700,1600 610,1735 C520,1870 700,1980 620,2120 C535,2250 710,2380 615,2520 C570,2600 620,2720 610,2860" fill="none" stroke="#ff8a00" strokeWidth={7} strokeLinecap="round" opacity={0.85} filter="url(#cityGlow)" />
 
         {/* Bridges between districts */}
         {[
-          { y: 1040, x1: 890, x2: 1180 },
           { y: 1560, x1: 70, x2: 380 },
           { y: 2120, x1: 850, x2: 1180 },
           { y: 2780, x1: 60, x2: 420 },
@@ -494,7 +503,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           { x: 88, y: 760, w: 58, h: 112, front: '#60758d', side: '#3b4d63', top: '#a9b9c9', roof: '#d6dee6' },
           { x: 400, y: 650, w: 70, h: 128, front: '#71859b', side: '#485b70', top: '#b1bfcc', roof: '#e2e8ee' },
           { x: 1085, y: 675, w: 68, h: 118, front: '#667b91', side: '#405369', top: '#aab9c8', roof: '#dce4eb' },
-          { x: 1140, y: 1040, w: 56, h: 104, front: '#74879a', side: '#4b5d71', top: '#b1bfcc', roof: '#e2e8ee' },
 
           { x: 95, y: 1120, w: 64, h: 118, front: '#657a90', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
           { x: 365, y: 1180, w: 72, h: 126, front: '#74879a', side: '#4b5d71', top: '#afbdca', roof: '#e2e8ee' },
@@ -638,4 +646,3 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
     </section>
   );
 };
-
