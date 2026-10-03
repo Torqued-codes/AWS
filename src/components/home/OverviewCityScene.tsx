@@ -158,7 +158,7 @@ const SERVICE_MARKERS = [
   { label: 'Security', Icon: ShieldCheck, x: 190, y: 1440, action: 'explore' },
   { label: 'Storage', Icon: Database, x: 790, y: 1120, action: 'explore' },
   { label: 'Integration', Icon: Link2, x: 900, y: 1405, action: 'quiz' },
-  { label: 'Compute', Icon: Cpu, x: 290, y: 1890, action: 'explore' },
+  { label: 'Compute', Icon: Cpu, x: 295, y: 1890, action: 'explore' },
   { label: 'Networking', Icon: Network, x: 800, y: 1675, action: 'explore' },
   { label: 'Community Center', Icon: Building2, x: 900, y: 1900, action: 'explore' },
   { label: 'Management', Icon: Settings, x: 280, y: 2360, action: 'explore' },
@@ -258,7 +258,7 @@ const serviceBuilding = (label: string, x: number, y: number) => {
   }
 };
 export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
-  const road = 'M608,566 C618,604 628,638 604,672 C575,711 508,741 430,760 C430,760 760,860 580,1010 C400,1170 760,1320 610,1490 C430,1690 770,1810 610,1990 C420,2180 760,2330 610,2510 C520,2630 620,2750 610,2920';
+  const road = 'M608,660 C430,760 760,860 580,1010 C400,1170 760,1320 610,1490 C430,1690 770,1810 610,1990 C420,2180 760,2330 610,2510 C520,2630 620,2750 610,2920';
   return (
     <section className="relative w-full overflow-hidden bg-[#173f1e]">
       <svg
@@ -384,11 +384,11 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
             This is the SAME road as the city spine: identical width, edge layers,
             center marking and colors. It runs behind the tower so the full-width
             road visibly connects directly to the blue building base. */}
-        <path d="M608,566 C618,604 628,638 604,672 C575,711 508,741 430,760" fill="none" stroke="#12161c" strokeWidth={112} strokeLinecap="round" />
-        <path d="M608,566 C618,604 628,638 604,672 C575,711 508,741 430,760" fill="none" stroke="#4b5561" strokeWidth={100} strokeLinecap="round" />
-        <path d="M608,566 C618,604 628,638 604,672 C575,711 508,741 430,760" fill="none" stroke="#d8dee7" strokeWidth={6} strokeLinecap="round" />
-        <path d="M608,566 C618,604 628,638 604,672 C575,711 508,741 430,760" fill="none" stroke="#111720" strokeWidth={88} strokeLinecap="round" />
-        <path d="M608,566 C618,604 628,638 604,672 C575,711 508,741 430,760" fill="none" stroke="#f4f6f8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="20 18" />
+        <path d="M608,566 L608,660" fill="none" stroke="#12161c" strokeWidth={112} strokeLinecap="round" />
+        <path d="M608,566 L608,660" fill="none" stroke="#4b5561" strokeWidth={100} strokeLinecap="round" />
+        <path d="M608,566 L608,660" fill="none" stroke="#d8dee7" strokeWidth={6} strokeLinecap="round" />
+        <path d="M608,566 L608,660" fill="none" stroke="#111720" strokeWidth={88} strokeLinecap="round" />
+        <path d="M608,566 L608,660" fill="none" stroke="#f4f6f8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="20 18" />
         {/* Side roads now physically meet the main black road instead of stopping short. */}
         {[
           // Intelligence district
@@ -417,7 +417,7 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         <path d={road} fill="none" stroke="#111720" strokeWidth={88} strokeLinecap="round" />
         <path d={road} fill="none" stroke="#f4f6f8" strokeWidth={2.4} strokeLinecap="round" strokeDasharray="20 18" />
         {/* AWS landmark tower — anchored on the green land with a visible circular base. */}
-        <g>
+        <g transform="translate(-10,85)">
           <path d="M536,370 L536,548 A36,16 0 0 0 608,566 L608,370 Z" fill="url(#towerLeft)" />
           <path d="M608,370 L680,368 L680,548 L608,566 Z" fill="url(#towerRight)" />
           <path d="M536,370 L608,358 L680,368 L608,380 Z" fill="#111c2e" />
@@ -478,11 +478,11 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
         })}
         {/* Curated demo buildings: placed intentionally in open green zones, away from service landmarks and the main road. */}
         {[
-          { x: 88, y: 760, w: 58, h: 112, front: '#60758d', side: '#3b4d63', top: '#a9b9c9', roof: '#d6dee6' },
-          { x: 400, y: 650, w: 70, h: 128, front: '#71859b', side: '#485b70', top: '#b1bfcc', roof: '#e2e8ee' },
+          { x: 60, y: 760, w: 58, h: 112, front: '#60758d', side: '#3b4d63', top: '#a9b9c9', roof: '#d6dee6' },
+          { x: 400, y: 720, w: 70, h: 128, front: '#71859b', side: '#485b70', top: '#b1bfcc', roof: '#e2e8ee' },
           { x: 1085, y: 675, w: 68, h: 118, front: '#667b91', side: '#405369', top: '#aab9c8', roof: '#dce4eb' },
           { x: 95, y: 1120, w: 64, h: 118, front: '#657a90', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
-          { x: 365, y: 1180, w: 72, h: 126, front: '#74879a', side: '#4b5d71', top: '#afbdca', roof: '#e2e8ee' },
+          { x: 390, y: 1180, w: 72, h: 126, front: '#74879a', side: '#4b5d71', top: '#afbdca', roof: '#e2e8ee' },
           { x: 1040, y: 1215, w: 64, h: 112, front: '#60758c', side: '#3b4f65', top: '#a8b8c7', roof: '#dce4eb' },
           { x: 105, y: 1640, w: 68, h: 126, front: '#6c8197', side: '#42566b', top: '#adbdca', roof: '#e0e7ed' },
           { x: 350, y: 1760, w: 72, h: 112, front: '#5e738a', side: '#394d63', top: '#a4b5c5', roof: '#dce4eb' },
@@ -579,13 +579,11 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           <rect x="-5" y="-101" width="10" height="7" fill="#c98f64" />
         </g>
         {/* Bottom destination marker */}
-        <text x="608" y="2970" textAnchor="middle" fontSize="15" fontWeight={800} fill="#fff" fontFamily="system-ui,sans-serif" letterSpacing="2">
-          AWS CLOUD CITY • END OF OVERVIEW
-        </text>
-        <text x="608" y="2990" textAnchor="middle" fontSize="11" fill="#b8c6d6" fontFamily="system-ui,sans-serif">
-          Follow the road to explore every learning district
-        </text>
+        
       </svg>
     </section>
   );
 };
+
+
+
