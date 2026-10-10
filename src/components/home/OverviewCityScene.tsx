@@ -152,17 +152,17 @@ const Stadium: React.FC<{
   </g>
 );
 const SERVICE_MARKERS = [
-  { label: 'AI/ML', Icon: BrainCircuit, x: 188, y: 790, action: 'quiz' },
-  { label: 'Analytics', Icon: BarChart3, x: 835, y: 710, action: 'quiz' },
-  { label: 'Developer Tools', Icon: Code2, x: 928, y: 1000, action: 'quiz' },
-  { label: 'Security', Icon: ShieldCheck, x: 190, y: 1440, action: 'explore' },
-  { label: 'Storage', Icon: Database, x: 790, y: 1120, action: 'explore' },
+  { label: 'AI/ML', Icon: BrainCircuit, x: 188, y: 820, action: 'quiz' },
+  { label: 'Analytics', Icon: BarChart3, x: 825, y: 730, action: 'quiz' },
+  { label: 'Developer Tools', Icon: Code2, x: 800, y: 940, action: 'quiz' },
+  { label: 'Security', Icon: ShieldCheck, x: 190, y: 1400, action: 'explore' },
+  { label: 'Storage', Icon: Database, x: 389, y: 1120, action: 'explore' },
   { label: 'Integration', Icon: Link2, x: 900, y: 1405, action: 'quiz' },
   { label: 'Compute', Icon: Cpu, x: 295, y: 1890, action: 'explore' },
   { label: 'Networking', Icon: Network, x: 800, y: 1675, action: 'explore' },
   { label: 'Community Center', Icon: Building2, x: 900, y: 1900, action: 'explore' },
   { label: 'Management', Icon: Settings, x: 280, y: 2360, action: 'explore' },
-  { label: 'IoT', Icon: RadioTower, x: 850, y: 2180, action: 'explore' },
+  { label: 'IoT', Icon: RadioTower, x: 850, y: 2200, action: 'explore' },
   { label: 'Challenge Zone', Icon: Zap, x: 890, y: 2500, action: 'quiz' },
 ] as const;
 const DISTRICTS = [
@@ -354,26 +354,53 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           return <line key={i} x1={x} y1={y} x2={x + 28} y2={y} stroke="#bfe6ff" strokeWidth={1} opacity={0.35} />;
         })}
         {/* Small boats in the lake — deliberately much smaller than the city buildings. */}
-        <g aria-label="boats on the lake">
-          <g transform="translate(250 395)">
-            <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#253342" stroke="#121a22" strokeWidth="2" />
-            <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#f2f5f7" />
-            <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#ff9900" opacity="0.9" />
-            <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
-          </g>
-          <g transform="translate(920 370) scale(0.82)">
-            <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#314153" stroke="#121a22" strokeWidth="2" />
-            <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#f2f5f7" />
-            <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#1f66c7" opacity="0.95" />
-            <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
-          </g>
-          <g transform="translate(1090 455) scale(0.68)">
-            <path d="M-24,0 Q0,8 24,0 L17,11 Q0,18 -17,11 Z" fill="#263847" stroke="#121a22" strokeWidth="2" />
-            <path d="M-6,-2 L-6,-23 L9,-23 L9,-2 Z" fill="#eef3f7" />
-            <path d="M-6,-23 L2,-23 L2,-4 L-6,-4 Z" fill="#ff9900" opacity="0.9" />
-            <line x1="9" y1="-23" x2="9" y2="1" stroke="#c7d0d8" strokeWidth="2" />
-          </g>
-        </g>
+<g aria-label="boats on the lake">
+  <g transform="translate(250 395)">
+    <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#253342" stroke="#121a22" strokeWidth="2" />
+    <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#f2f5f7" />
+    <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#ff9900" opacity="0.9" />
+    <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+  <g transform="translate(920 370) scale(0.82)">
+    <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#314153" stroke="#121a22" strokeWidth="2" />
+    <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#f2f5f7" />
+    <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#1f66c7" opacity="0.95" />
+    <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+  <g transform="translate(1090 455) scale(0.68)">
+    <path d="M-24,0 Q0,8 24,0 L17,11 Q0,18 -17,11 Z" fill="#263847" stroke="#121a22" strokeWidth="2" />
+    <path d="M-6,-2 L-6,-23 L9,-23 L9,-2 Z" fill="#eef3f7" />
+    <path d="M-6,-23 L2,-23 L2,-4 L-6,-4 Z" fill="#ff9900" opacity="0.9" />
+    <line x1="9" y1="-23" x2="9" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+
+  {/* Additional small boats */}
+  <g transform="translate(420 440) scale(0.62)">
+    <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#314153" stroke="#121a22" strokeWidth="2" />
+    <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#f2f5f7" />
+    <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#1f66c7" />
+    <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+  <g transform="translate(575 385) scale(0.5)">
+    <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#263847" stroke="#121a22" strokeWidth="2" />
+    <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#eef3f7" />
+    <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#ff9900" />
+    <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+  <g transform="translate(785 455) scale(0.58)">
+    <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#253342" stroke="#121a22" strokeWidth="2" />
+    <path d="M-7,-2 L-7,-25 L10,-25 L10,-2 Z" fill="#f2f5f7" />
+    <path d="M-7,-25 L2,-25 L2,-4 L-7,-4 Z" fill="#2d70ea" />
+    <line x1="10" y1="-25" x2="10" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+  <g transform="translate(1010 405) scale(0.48)">
+    <path d="M-24,0 Q0,8 24,0 L17,11 Q0,18 -17,11 Z" fill="#314153" stroke="#121a22" strokeWidth="2" />
+    <path d="M-6,-2 L-6,-23 L9,-23 L9,-2 Z" fill="#eef3f7" />
+    <path d="M-6,-23 L2,-23 L2,-4 L-6,-4 Z" fill="#ff9900" />
+    <line x1="9" y1="-23" x2="9" y2="1" stroke="#c7d0d8" strokeWidth="2" />
+  </g>
+</g>
+
         {/* City ground / district bands */}
         <path d={`M0,520 C220,470 350,560 520,520 S820,470 980,540 S1120,570 ${W},525 L${W},${H} L0,${H} Z`} fill="url(#cityLand)" />
         <path d="M0,870 C170,800 330,900 500,850 S820,820 1216,900" fill="none" stroke="#75a64a" strokeWidth={42} opacity={0.08} />
@@ -476,38 +503,71 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
             </g>
           );
         })}
-        {/* Curated demo buildings: placed intentionally in open green zones, away from service landmarks and the main road. */}
-        {[
-          { x: 60, y: 760, w: 58, h: 112, front: '#60758d', side: '#3b4d63', top: '#a9b9c9', roof: '#d6dee6' },
-          { x: 400, y: 720, w: 70, h: 128, front: '#71859b', side: '#485b70', top: '#b1bfcc', roof: '#e2e8ee' },
-          { x: 1085, y: 675, w: 68, h: 118, front: '#667b91', side: '#405369', top: '#aab9c8', roof: '#dce4eb' },
-          { x: 95, y: 1120, w: 64, h: 118, front: '#657a90', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
-          { x: 390, y: 1180, w: 72, h: 126, front: '#74879a', side: '#4b5d71', top: '#afbdca', roof: '#e2e8ee' },
-          { x: 1040, y: 1215, w: 64, h: 112, front: '#60758c', side: '#3b4f65', top: '#a8b8c7', roof: '#dce4eb' },
-          { x: 105, y: 1640, w: 68, h: 126, front: '#6c8197', side: '#42566b', top: '#adbdca', roof: '#e0e7ed' },
-          { x: 350, y: 1760, w: 72, h: 112, front: '#5e738a', side: '#394d63', top: '#a4b5c5', roof: '#dce4eb' },
-          { x: 1030, y: 1690, w: 70, h: 130, front: '#72869a', side: '#4a5d72', top: '#afbdca', roof: '#e2e8ee' },
-          { x: 1135, y: 2020, w: 58, h: 106, front: '#65798f', side: '#405267', top: '#a8b8c7', roof: '#dce4eb' },
-          { x: 105, y: 2160, w: 68, h: 120, front: '#667b91', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
-          { x: 355, y: 2280, w: 62, h: 108, front: '#73879a', side: '#4b5d72', top: '#b0becb', roof: '#e1e7ed' },
-          { x: 1045, y: 2260, w: 72, h: 122, front: '#61768d', side: '#3d5166', top: '#a7b7c6', roof: '#dce4eb' },
-          { x: 1140, y: 2540, w: 62, h: 110, front: '#73869a', side: '#4b5c70', top: '#adbdca', roof: '#e0e7ed' },
-          { x: 465, y: 820, w: 48, h: 76, front: '#536a82', side: '#34485e', top: '#9daec0', roof: '#d9e1e8' },
-          { x: 1080, y: 1460, w: 52, h: 84, front: '#526980', side: '#34485d', top: '#9eafc0', roof: '#d9e1e8' },
-          { x: 450, y: 2050, w: 54, h: 88, front: '#5a7087', side: '#394d63', top: '#a1b2c2', roof: '#dbe3e9' },
-          { x: 785, y: 2450, w: 58, h: 94, front: '#60758b', side: '#3c5065', top: '#a6b6c5', roof: '#dce4ea' },
-        ].map((b, i) => (
-          <g key={`curated-demo-${i}`}>
-            <Box x={b.x} y={b.y} w={b.w} h={b.h} d={14} front={b.front} side={b.side} top={b.top} />
-            <rect x={b.x - b.w / 2 + 7} y={b.y - b.h - 7} width={b.w - 14} height={4} rx={2} fill={b.roof} opacity={0.8} />
-            {i % 3 === 0 && (
-              <g>
-                <rect x={b.x + b.w / 2 - 17} y={b.y - b.h - 18} width={8} height={11} rx={2} fill="#657383" />
-                <rect x={b.x + b.w / 2 - 8} y={b.y - b.h - 15} width={3} height={8} fill="#ff9900" opacity={0.75} />
-              </g>
-            )}
-          </g>
-        ))}
+        ```tsx
+{/* Curated demo buildings: original positions preserved, with extra buildings added in open spaces. */}
+{[
+  // Original buildings — positions and dimensions unchanged
+  { x: 60, y: 765, w: 58, h: 112, front: '#60758d', side: '#3b4d63', top: '#a9b9c9', roof: '#d6dee6' },
+  { x: 400, y: 720, w: 70, h: 128, front: '#71859b', side: '#485b70', top: '#b1bfcc', roof: '#e2e8ee' },
+  { x: 1085, y: 675, w: 68, h: 118, front: '#667b91', side: '#405369', top: '#aab9c8', roof: '#dce4eb' },
+  { x: 95, y: 1120, w: 64, h: 118, front: '#657a90', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
+  { x: 800, y: 1200, w: 72, h: 126, front: '#74879a', side: '#4b5d71', top: '#afbdca', roof: '#e2e8ee' },
+  { x: 1090, y: 1215, w: 64, h: 112, front: '#60758c', side: '#3b4f65', top: '#a8b8c7', roof: '#dce4eb' },
+  { x: 105, y: 1640, w: 68, h: 126, front: '#6c8197', side: '#42566b', top: '#adbdca', roof: '#e0e7ed' },
+  { x: 350, y: 1760, w: 72, h: 112, front: '#5e738a', side: '#394d63', top: '#a4b5c5', roof: '#dce4eb' },
+  { x: 1030, y: 1690, w: 70, h: 130, front: '#72869a', side: '#4a5d72', top: '#afbdca', roof: '#e2e8ee' },
+  { x: 1135, y: 2020, w: 58, h: 106, front: '#65798f', side: '#405267', top: '#a8b8c7', roof: '#dce4eb' },
+  { x: 105, y: 2160, w: 68, h: 120, front: '#667b91', side: '#405268', top: '#a9b9c8', roof: '#dce4eb' },
+  { x: 355, y: 2280, w: 62, h: 108, front: '#73879a', side: '#4b5d72', top: '#b0becb', roof: '#e1e7ed' },
+  { x: 1045, y: 2260, w: 72, h: 122, front: '#61768d', side: '#3d5166', top: '#a7b7c6', roof: '#dce4eb' },
+  { x: 1140, y: 2540, w: 62, h: 110, front: '#73869a', side: '#4b5c70', top: '#adbdca', roof: '#e0e7ed' },
+  { x: 465, y: 820, w: 48, h: 76, front: '#536a82', side: '#34485e', top: '#9daec0', roof: '#d9e1e8' },
+  { x: 1080, y: 1460, w: 52, h: 84, front: '#526980', side: '#34485d', top: '#9eafc0', roof: '#d9e1e8' },
+  { x: 450, y: 2050, w: 54, h: 88, front: '#5a7087', side: '#394d63', top: '#a1b2c2', roof: '#dbe3e9' },
+  { x: 785, y: 2450, w: 58, h: 94, front: '#60758b', side: '#3c5065', top: '#a6b6c5', roof: '#dce4ea' },
+
+  
+  { x: 235, y: 690, w: 54, h: 94, front: '#697f95', side: '#40536a', top: '#aabaca', roof: '#dce4eb' },
+  { x: 1000, y: 770, w: 58, h: 102, front: '#71859a', side: '#475a70', top: '#b0bfcc', roof: '#e1e8ee' },
+  { x: 380, y: 880, w: 52, h: 86, front: '#5d738a', side: '#394e64', top: '#a3b4c4', roof: '#d9e2e9' },
+
+  { x: 290, y: 1040, w: 58, h: 100, front: '#6b8096', side: '#43566c', top: '#adbdca', roof: '#e0e7ed' },
+  { x: 690, y: 1120, w: 54, h: 92, front: '#60768c', side: '#3c5066', top: '#a7b7c6', roof: '#dce4eb' },
+  { x: 950, y: 1300, w: 58, h: 98, front: '#71869a', side: '#495c71', top: '#b1bfcc', roof: '#e2e8ee' },
+  { x: 300, y: 1430, w: 52, h: 88, front: '#5e748b', side: '#3b4f65', top: '#a5b6c5', roof: '#dce4eb' },
+
+  { x: 395, y: 1590, w: 58, h: 104, front: '#71859a', side: '#475a70', top: '#b0bfcc', roof: '#e1e8ee' },
+  { x: 690, y: 1690, w: 54, h: 94, front: '#61768c', side: '#3d5167', top: '#a8b8c7', roof: '#dce4eb' },
+  { x: 990, y: 1820, w: 58, h: 102, front: '#6c8196', side: '#43576d', top: '#adbdca', roof: '#e0e7ed' },
+  { x: 295, y: 1950, w: 54, h: 92, front: '#60758b', side: '#3c5065', top: '#a6b6c5', roof: '#dce4ea' },
+
+  { x: 250, y: 2110, w: 58, h: 100, front: '#71869a', side: '#495c71', top: '#b1bfcc', roof: '#e2e8ee' },
+  { x: 680, y: 2200, w: 54, h: 92, front: '#5f748b', side: '#3b4f65', top: '#a5b6c5', roof: '#dbe3e9' },
+  { x: 400, y: 2510, w: 54, h: 92, front: '#62778d', side: '#3d5166', top: '#a8b8c7', roof: '#dce4eb' },
+  { x: 950, y: 2640, w: 58, h: 102, front: '#708499', side: '#475a70', top: '#afbdca', roof: '#e1e8ee' },
+  { x: 450, y: 2690, w: 58, h: 100, front: '#6b8095', side: '#42566b', top: '#acbcc9', roof: '#dfe6ed' },
+  { x: 300, y: 2770, w: 54, h: 90, front: '#5f748a', side: '#3b4f64', top: '#a5b5c5', roof: '#dbe3e9' },
+].map((b, i) => (
+  <g key={`curated-demo-${i}`}>
+    <Box x={b.x} y={b.y} w={b.w} h={b.h} d={14} front={b.front} side={b.side} top={b.top} />
+    <rect
+      x={b.x - b.w / 2 + 7}
+      y={b.y - b.h - 7}
+      width={b.w - 14}
+      height={4}
+      rx={2}
+      fill={b.roof}
+      opacity={0.8}
+    />
+    {i % 3 === 0 && (
+      <g>
+        <rect x={b.x + b.w / 2 - 17} y={b.y - b.h - 18} width={8} height={11} rx={2} fill="#657383" />
+        <rect x={b.x + b.w / 2 - 8} y={b.y - b.h - 15} width={3} height={8} fill="#ff9900" opacity={0.75} />
+      </g>
+    )}
+  </g>
+))}
+
         {/* Service districts */}
         {DISTRICTS.map((d) => (
           <g key={d.title}>
