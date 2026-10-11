@@ -16,7 +16,7 @@ export type ServiceInfo = {
   resourceTitle: string;
   resourceUrl: string;
   resourceNote: string;
-  questions: [ServiceQuestion, ServiceQuestion, ServiceQuestion];
+  questions: ServiceQuestion[];
 };
 
 export const SERVICE_LEARNING: Record<string, ServiceInfo> = {
@@ -29,6 +29,9 @@ export const SERVICE_LEARNING: Record<string, ServiceInfo> = {
       { question: 'Which AWS service helps developers build, train, and deploy machine-learning models?', options: ['Amazon SageMaker', 'Amazon Route 53', 'AWS Artifact', 'Amazon EBS'], answer: 0, explanation: 'Amazon SageMaker provides tools for building, training, and deploying machine-learning models.' },
       { question: 'What is a common use of generative AI?', options: ['Assigning IP addresses only', 'Generating new text, images, or other content', 'Replacing every database', 'Physically repairing servers'], answer: 1, explanation: 'Generative AI models can create new content such as text, images, and code.' },
       { question: 'In a typical supervised-learning workflow, what does a model learn from?', options: ['Only unlabeled random data', 'Network security groups', 'Examples containing inputs and target labels', 'Billing invoices only'], answer: 2, explanation: 'Supervised learning uses labeled examples to learn a mapping from inputs to target outputs.' },
+      { question: 'What distinguishes deep learning from many traditional machine-learning approaches?', options: ['It uses multi-layer neural networks to learn representations', 'It only stores files in object storage', 'It requires no training data', 'It is a DNS protocol'], answer: 0, explanation: 'Deep learning uses neural networks with multiple layers to learn increasingly useful representations from data.' },
+      { question: 'What is a foundation model commonly used for in generative AI?', options: ['Routing packets between subnets', 'Serving as a broadly trained model that can be adapted for tasks', 'Replacing identity and access policies', 'Archiving EC2 volumes only'], answer: 1, explanation: 'Foundation models are trained on broad data and can be prompted or adapted for a range of downstream tasks.' },
+      { question: 'What does prompt engineering focus on?', options: ['Choosing and refining inputs to guide a model response', 'Increasing the physical size of a server', 'Creating VPC route tables', 'Compressing EBS snapshots only'], answer: 0, explanation: 'Prompt engineering structures instructions and context to improve the relevance and quality of model outputs.' },
     ],
   },
   Analytics: {
@@ -152,6 +155,72 @@ export const SERVICE_LEARNING: Record<string, ServiceInfo> = {
       { question: 'Before experimenting with AWS services, what should you do?', options: ['Ignore permissions and costs', 'Expose access keys in source code', 'Understand pricing, set appropriate permissions, and clean up resources', 'Make all resources publicly accessible'], answer: 2, explanation: 'Cost awareness, secure permissions, and cleanup reduce unnecessary charges and security risk.' },
     ],
   },
+};
+
+
+/** Topic groupings for the MCQ bank. Question indices refer to SERVICE_LEARNING.questions,
+ * so the service page and the bank always share the same answer key and explanations. */
+export type McqTopicSection = { title: string; description: string; questionIndices: number[] };
+export const SERVICE_MCQ_SECTIONS: Record<string, McqTopicSection[]> = {
+  'AI/ML': [
+    { title: 'Machine Learning Fundamentals', description: 'Training data, supervised learning, and ML workflows', questionIndices: [0, 2] },
+    { title: 'Deep Learning', description: 'Neural networks and learned representations', questionIndices: [3] },
+    { title: 'Generative AI & Foundation Models', description: 'Content generation, foundation models, and prompting', questionIndices: [1, 4, 5] },
+  ],
+  Analytics: [
+    { title: 'Querying Data', description: 'Query data stored in Amazon S3', questionIndices: [0] },
+    { title: 'Data Warehousing', description: 'Analytical data warehouses', questionIndices: [1] },
+    { title: 'Data Visualization', description: 'Interpreting metrics and trends', questionIndices: [2] },
+  ],
+  'Developer Tools': [
+    { title: 'CI/CD', description: 'Build, test, and release automation', questionIndices: [0] },
+    { title: 'Version Control', description: 'Track and collaborate on code changes', questionIndices: [1] },
+    { title: 'Build Services', description: 'AWS developer build workflows', questionIndices: [2] },
+  ],
+  Security: [
+    { title: 'Identity & Access Management', description: 'Permissions and least privilege', questionIndices: [0, 1] },
+    { title: 'Shared Responsibility', description: 'Customer and AWS security responsibilities', questionIndices: [2] },
+  ],
+  Storage: [
+    { title: 'Object Storage', description: 'Amazon S3 objects and buckets', questionIndices: [0] },
+    { title: 'Block Storage', description: 'Amazon EBS volumes', questionIndices: [1] },
+    { title: 'File Storage', description: 'Shared file systems with Amazon EFS', questionIndices: [2] },
+  ],
+  Integration: [
+    { title: 'Message Queues', description: 'Decoupling components with Amazon SQS', questionIndices: [0] },
+    { title: 'Publish/Subscribe Messaging', description: 'Notifications with Amazon SNS', questionIndices: [1] },
+    { title: 'Distributed Systems', description: 'Independent scaling and resilience', questionIndices: [2] },
+  ],
+  Compute: [
+    { title: 'Virtual Servers', description: 'Amazon EC2 compute capacity', questionIndices: [0] },
+    { title: 'Serverless Compute', description: 'Event-driven AWS Lambda functions', questionIndices: [1] },
+    { title: 'Scaling & Availability', description: 'Adjusting capacity to demand', questionIndices: [2] },
+  ],
+  Networking: [
+    { title: 'Virtual Private Cloud', description: 'Isolated virtual networks in AWS', questionIndices: [0] },
+    { title: 'Subnets', description: 'Segmenting VPC address ranges', questionIndices: [1] },
+    { title: 'Routing', description: 'Directing network traffic', questionIndices: [2] },
+  ],
+  'Community Center': [
+    { title: 'Learning Communities', description: 'Peer learning and collaboration', questionIndices: [0] },
+    { title: 'Asking Technical Questions', description: 'Share useful context safely', questionIndices: [1] },
+    { title: 'Official Documentation', description: 'Finding authoritative AWS guidance', questionIndices: [2] },
+  ],
+  Management: [
+    { title: 'Monitoring & Observability', description: 'Monitoring workloads and metrics', questionIndices: [0] },
+    { title: 'Governance & Operations', description: 'Managing resources and operational tasks', questionIndices: [1] },
+    { title: 'Cost & Resource Management', description: 'Keeping cloud resources efficient', questionIndices: [2] },
+  ],
+  IoT: [
+    { title: 'Device Connectivity', description: 'Connecting devices with AWS IoT Core', questionIndices: [0] },
+    { title: 'Messaging Protocols', description: 'Lightweight publish/subscribe messaging', questionIndices: [1] },
+    { title: 'Device Identity & Security', description: 'Unique credentials and authentication', questionIndices: [2] },
+  ],
+  'Challenge Zone': [
+    { title: 'Cloud Fundamentals', description: 'On-demand cloud computing', questionIndices: [0] },
+    { title: 'AWS Global Infrastructure', description: 'Regions and Availability Zones', questionIndices: [1] },
+    { title: 'Cost & Security Basics', description: 'Safe, cost-aware experimentation', questionIndices: [2] },
+  ],
 };
 
 const SERVICE_ICONS: Record<string, React.ElementType> = {
@@ -309,11 +378,6 @@ export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
     </div>
   );
 };
-
-
-
-
-
 
 
 
