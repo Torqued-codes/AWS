@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import {
   Building2,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../../utils/soundEngine';
 import { OverviewCityScene } from './OverviewCityScene';
+import { ServiceLearningPage } from './ServiceLearningPage';
 
 interface StatCardData {
   label: string;
@@ -63,6 +64,7 @@ const CityContinuation: React.FC<{ children: React.ReactNode; className?: string
 
 export const HomePage: React.FC = () => {
   const { students, questions, activeWeek, currentUser, setActiveTab } = useGame();
+  const [selectedService, setSelectedService] = useState<string | null>(null);
 
   const highestFloors = Math.max(...students.map(s => s.floors), 1);
   const totalPoints = students.reduce((sum, s) => sum + s.points, 0);
@@ -141,12 +143,18 @@ export const HomePage: React.FC = () => {
     },
   ];
 
+  if (selectedService) {
+    return <ServiceLearningPage service={selectedService} onBack={() => setSelectedService(null)} />;
+  }
+
   return (
     <div className="relative overflow-hidden bg-[#173f1e] text-zinc-100">
       {/* The city is now the complete Overview world, from the first viewport to the bottom of the page. */}
       <OverviewCityScene
-        onExplore={() => { soundEngine.playTap(); setActiveTab('city'); }}
-        onQuiz={() => { soundEngine.playTap(); setActiveTab('quiz'); }}
+        onServiceSelect={(service) => {
+          soundEngine.playTap();
+          setSelectedService(service);
+        }}
       />
 
       {/* City information plaza: transparent/frosted UI instead of a disconnected dark section. */}

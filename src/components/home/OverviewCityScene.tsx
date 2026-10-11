@@ -3,7 +3,7 @@ import {
   ShieldCheck, Cpu, BrainCircuit, Database, Network, BarChart3,
   Code2, Link2, Settings, RadioTower, Building2, Zap,
 } from 'lucide-react';
-type Props = { onExplore: () => void; onQuiz: () => void };
+type Props = { onServiceSelect: (service: string) => void };
 /**
  * Full-page hardcoded AWS city.
  *
@@ -257,7 +257,7 @@ const serviceBuilding = (label: string, x: number, y: number) => {
       return <Box x={x} y={y + 70} w={100} h={80} d={18} front="#71839b" side="#4c5b70" top="#a6b5c7" />;
   }
 };
-export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
+export const OverviewCityScene: React.FC<Props> = ({ onServiceSelect }) => {
   const road = 'M608,660 C430,760 760,860 580,1010 C400,1170 760,1320 610,1490 C430,1690 770,1810 610,1990 C420,2180 760,2330 610,2510 C520,2630 620,2750 610,2920';
   return (
     <section className="relative w-full overflow-hidden bg-[#173f1e]">
@@ -373,7 +373,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
     <path d="M-6,-23 L2,-23 L2,-4 L-6,-4 Z" fill="#ff9900" opacity="0.9" />
     <line x1="9" y1="-23" x2="9" y2="1" stroke="#c7d0d8" strokeWidth="2" />
   </g>
-
   {/* Additional small boats */}
   <g transform="translate(420 440) scale(0.62)">
     <path d="M-25,0 Q0,9 25,0 L18,12 Q0,19 -18,12 Z" fill="#314153" stroke="#121a22" strokeWidth="2" />
@@ -400,7 +399,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
     <line x1="9" y1="-23" x2="9" y2="1" stroke="#c7d0d8" strokeWidth="2" />
   </g>
 </g>
-
         {/* City ground / district bands */}
         <path d={`M0,520 C220,470 350,560 520,520 S820,470 980,540 S1120,570 ${W},525 L${W},${H} L0,${H} Z`} fill="url(#cityLand)" />
         <path d="M0,870 C170,800 330,900 500,850 S820,820 1216,900" fill="none" stroke="#75a64a" strokeWidth={42} opacity={0.08} />
@@ -503,7 +501,6 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
             </g>
           );
         })}
-        ```tsx
 {/* Curated demo buildings: original positions preserved, with extra buildings added in open spaces. */}
 {[
   // Original buildings — positions and dimensions unchanged
@@ -525,22 +522,17 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
   { x: 1080, y: 1460, w: 52, h: 84, front: '#526980', side: '#34485d', top: '#9eafc0', roof: '#d9e1e8' },
   { x: 450, y: 2050, w: 54, h: 88, front: '#5a7087', side: '#394d63', top: '#a1b2c2', roof: '#dbe3e9' },
   { x: 785, y: 2450, w: 58, h: 94, front: '#60758b', side: '#3c5065', top: '#a6b6c5', roof: '#dce4ea' },
-
-  
   { x: 235, y: 690, w: 54, h: 94, front: '#697f95', side: '#40536a', top: '#aabaca', roof: '#dce4eb' },
   { x: 1000, y: 770, w: 58, h: 102, front: '#71859a', side: '#475a70', top: '#b0bfcc', roof: '#e1e8ee' },
   { x: 380, y: 880, w: 52, h: 86, front: '#5d738a', side: '#394e64', top: '#a3b4c4', roof: '#d9e2e9' },
-
   { x: 290, y: 1040, w: 58, h: 100, front: '#6b8096', side: '#43566c', top: '#adbdca', roof: '#e0e7ed' },
   { x: 690, y: 1120, w: 54, h: 92, front: '#60768c', side: '#3c5066', top: '#a7b7c6', roof: '#dce4eb' },
   { x: 950, y: 1300, w: 58, h: 98, front: '#71869a', side: '#495c71', top: '#b1bfcc', roof: '#e2e8ee' },
   { x: 300, y: 1430, w: 52, h: 88, front: '#5e748b', side: '#3b4f65', top: '#a5b6c5', roof: '#dce4eb' },
-
   { x: 395, y: 1590, w: 58, h: 104, front: '#71859a', side: '#475a70', top: '#b0bfcc', roof: '#e1e8ee' },
   { x: 690, y: 1690, w: 54, h: 94, front: '#61768c', side: '#3d5167', top: '#a8b8c7', roof: '#dce4eb' },
   { x: 990, y: 1820, w: 58, h: 102, front: '#6c8196', side: '#43576d', top: '#adbdca', roof: '#e0e7ed' },
   { x: 295, y: 1950, w: 54, h: 92, front: '#60758b', side: '#3c5065', top: '#a6b6c5', roof: '#dce4ea' },
-
   { x: 250, y: 2110, w: 58, h: 100, front: '#71869a', side: '#495c71', top: '#b1bfcc', roof: '#e2e8ee' },
   { x: 680, y: 2200, w: 54, h: 92, front: '#5f748b', side: '#3b4f65', top: '#a5b6c5', roof: '#dbe3e9' },
   { x: 400, y: 2510, w: 54, h: 92, front: '#62778d', side: '#3d5166', top: '#a8b8c7', roof: '#dce4eb' },
@@ -567,12 +559,21 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
     )}
   </g>
 ))}
-
-        {/* Service districts */}
+        {/* District banners: light, sign-like ribbons instead of plain black text boxes. */}
         {DISTRICTS.map((d) => (
           <g key={d.title}>
-            <rect x="42" y={d.y - 38} width="350" height="34" rx="17" fill="#10161f" opacity={0.76} />
-            <text x="62" y={d.y - 16} fontSize="13" fontWeight={800} fill="#ffad33" fontFamily="system-ui,sans-serif" letterSpacing="2">
+            <path
+              d={`M42 ${d.y - 38} H356 L392 ${d.y - 21} L356 ${d.y - 4} H42 Z`}
+              fill="#eaf4ff"
+              stroke="#65b7ff"
+              strokeWidth={1.5}
+              opacity={0.97}
+            />
+            <path d={`M42 ${d.y - 38} H356 L367 ${d.y - 32} H42 Z`} fill="#ffffff" opacity={0.78} />
+            <path d={`M42 ${d.y - 38} V${d.y - 4}`} stroke="#ff9900" strokeWidth={5} />
+            <circle cx="62" cy={d.y - 21} r="6" fill="#ff9900" />
+            <circle cx="62" cy={d.y - 21} r="2.5" fill="#fff7e8" />
+            <text x="78" y={d.y - 16} fontSize="13" fontWeight={800} fill="#17324d" fontFamily="system-ui,sans-serif" letterSpacing="1.6">
               {d.title}
             </text>
           </g>
@@ -584,20 +585,20 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           </g>
         ))}
         {/* Service markers */}
-        {SERVICE_MARKERS.map(({ label, Icon, x, y, action }) => {
+        {SERVICE_MARKERS.map(({ label, Icon, x, y }) => {
           const tw = Math.min(label.length * 6.7 + 24, 178);
           const labelX = x < 610 ? x + 30 : x - tw - 30;
           return (
             <g
               key={label}
-              onClick={action === 'quiz' ? onQuiz : onExplore}
+              onClick={() => onServiceSelect(label)}
               style={{ cursor: 'pointer' }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  action === 'quiz' ? onQuiz() : onExplore();
+                  onServiceSelect(label);
                 }
               }}
             >
@@ -639,11 +640,8 @@ export const OverviewCityScene: React.FC<Props> = ({ onExplore, onQuiz }) => {
           <rect x="-5" y="-101" width="10" height="7" fill="#c98f64" />
         </g>
         {/* Bottom destination marker */}
-        
       </svg>
     </section>
   );
 };
-
-
 
