@@ -10,7 +10,8 @@ import {
   Radio, 
   Zap,
   Home,
-  Calendar
+  Calendar,
+  BookOpen
 } from 'lucide-react';
 import { useGame } from '../../context/GameContext';
 import { soundEngine } from '../../utils/soundEngine';
@@ -46,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
     { id: 'quiz', label: 'Weekly Arena', icon: Zap, tag: '+10' },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'announcements', label: 'Certs & Events', icon: Radio },
+    { id: 'mcqs', label: 'MCQs', icon: BookOpen },
   ] as const;
 
   return (

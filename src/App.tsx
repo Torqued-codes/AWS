@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import { Navbar } from './components/layout/Navbar';
 import { HomePage } from './components/home/HomePage';
+import { McqBankPage } from './components/home/McqBankPage';
 import { CloudCityView } from './components/city/CloudCityView';
 import { QuizArena } from './components/quiz/QuizArena';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
@@ -169,6 +170,7 @@ const MainAppContent: React.FC = () => {
         {activeTab === 'announcements' && (
           <EventsHub />
         )}
+        {activeTab === 'mcqs' && <McqBankPage />}
       </main>
 
       {/* Global Modals & Drawers */}
@@ -271,4 +273,7 @@ export function App() {
 }
 
 export default App;
+
+
+
 

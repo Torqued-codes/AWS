@@ -25,7 +25,7 @@ interface GameContextType {
   activeWeek: number;
   isMuted: boolean;
   cooldownRemainingSecs: number;
-  activeTab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin';
+  activeTab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'mcqs' | 'admin';
   selectedStudentModal: Student | null;
   privacyNotice: string | null;
   isAuthenticated: boolean;
@@ -39,7 +39,7 @@ interface GameContextType {
   submitAnswer: (questionId: string, selectedOption: 'A' | 'B' | 'C' | 'D') => boolean;
   refillHearts: () => void;
   toggleMute: () => void;
-  setActiveTab: (tab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin') => void;
+  setActiveTab: (tab: 'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'mcqs' | 'admin') => void;
   setSelectedStudentModal: (student: Student | null) => void;
   selectStudentForModal: (student: Student) => void;
   dismissPrivacyNotice: () => void;
@@ -179,7 +179,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const [cooldownRemainingSecs, setCooldownRemainingSecs] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'admin'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'city' | 'quiz' | 'leaderboard' | 'announcements' | 'mcqs' | 'admin'>('home');
   const [selectedStudentModal, setSelectedStudentModal] = useState<Student | null>(null);
   const [privacyNotice, setPrivacyNotice] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -774,3 +774,6 @@ export const useGame = () => {
   }
   return context;
 };
+
+
+
