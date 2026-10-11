@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, ExternalLink, BookOpen, CheckCircle2, XCircle, RotateCcw,
   BrainCircuit, BarChart3, Code2, ShieldCheck, Database, Link2, Cpu,
@@ -11,7 +11,7 @@ type ServiceQuestion = {
   answer: number;
   explanation: string;
 };
-type ServiceInfo = {
+export type ServiceInfo = {
   description: string;
   resourceTitle: string;
   resourceUrl: string;
@@ -19,7 +19,7 @@ type ServiceInfo = {
   questions: [ServiceQuestion, ServiceQuestion, ServiceQuestion];
 };
 
-const SERVICE_LEARNING: Record<string, ServiceInfo> = {
+export const SERVICE_LEARNING: Record<string, ServiceInfo> = {
   'AI/ML': {
     description: 'Explore artificial intelligence, machine learning, and generative AI concepts on AWS.',
     resourceTitle: 'AWS AI learning resources',
@@ -165,6 +165,7 @@ type Props = { service: string; onBack: () => void };
 
 export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
   const info = SERVICE_LEARNING[service] || SERVICE_LEARNING['Challenge Zone'];
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'auto' }); }, [service]);
   const Icon = SERVICE_ICONS[service] || GraduationCap;
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [checked, setChecked] = useState<Record<number, boolean>>({});
@@ -182,7 +183,7 @@ export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
         <button onClick={onBack} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition hover:border-amber-400/40 hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Back to AWS City
         </button>
-        <div className="relative mb-8 overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-[#132338] via-[#101721] to-[#11151c] p-6 sm:p-9">
+        <div className="relative mb-8 overflow-hidden border-b border-white/10 bg-transparent px-1 py-5 sm:py-6">
           <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-2xl">
@@ -308,3 +309,11 @@ export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
     </div>
   );
 };
+
+
+
+
+
+
+
+
