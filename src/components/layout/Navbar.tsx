@@ -44,10 +44,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
   const navItems = [
     { id: 'home', label: 'Overview', icon: Home },
     { id: 'city', label: '3D City', icon: Building2 },
-    { id: 'quiz', label: 'Weekly Arena', icon: Zap, tag: '+10' },
+    { id: 'mcqs', label: 'MCQs', icon: BookOpen },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'announcements', label: 'Certs & Events', icon: Radio },
-    { id: 'mcqs', label: 'MCQs', icon: BookOpen },
   ] as const;
 
   return (
@@ -96,13 +95,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-aws-orange' : 'text-zinc-400'}`} />
                   <span>{item.label}</span>
-                  {'tag' in item && item.tag && (
-                    <span className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
-                      isActive ? 'bg-aws-orange text-black' : 'bg-zinc-800 text-zinc-400'
-                    }`}>
-                      {item.tag}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -242,3 +234,5 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenProfile }) => {
     </>
   );
 };
+
+

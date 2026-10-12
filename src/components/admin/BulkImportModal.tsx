@@ -74,6 +74,22 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   const [staged, setStaged] = useState<EditableStaged[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [targetWeek, setTargetWeek] = useState(activeWeek);
+  const [targetService, setTargetService] = useState('AI/ML');
+  const [targetTopic, setTargetTopic] = useState('Machine Learning Fundamentals');
+  const serviceTopics: Record<string, string[]> = {
+    'AI/ML': ['Machine Learning Fundamentals', 'Deep Learning', 'Generative AI & Foundation Models'],
+    Analytics: ['Data Lakes & Storage', 'SQL Querying', 'Data Warehousing & Visualization'],
+    'Developer Tools': ['Version Control', 'CI/CD', 'Build & Deployment'],
+    Security: ['Identity & Access Management', 'Encryption & Data Protection', 'Detection & Compliance'],
+    Storage: ['Object Storage', 'Block Storage', 'File Storage & Backup'],
+    Integration: ['Messaging & Queues', 'Event-Driven Architecture', 'Workflow Orchestration'],
+    Compute: ['Virtual Servers', 'Serverless Computing', 'Containers & Scaling'],
+    Networking: ['VPC & Subnets', 'Routing & Connectivity', 'Security Groups & Network ACLs'],
+    'Community Center': ['AWS Learning Community', 'Events & Builder Resources', 'Cloud Career Skills'],
+    Management: ['Monitoring & Logs', 'Governance & Compliance', 'Cost Management'],
+    IoT: ['IoT Core & Device Connectivity', 'Device Management', 'IoT Data Processing'],
+    'Challenge Zone': ['Cloud Architecture Challenges', 'Troubleshooting', 'Security & Cost Scenarios'],
+  };
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
 
@@ -198,7 +214,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       options: q.options,
       correctOption: q.correctKey,
       explanation: q.explanation,
-      awsDocTopic: q.awsDocTopic || 'AWS Cloud Architecture',
+      awsDocTopic: q.awsDocTopic || targetTopic,
+      serviceName: targetService,
+      topicName: targetTopic,
     }));
 
     addNewQuestions(payload);
@@ -483,8 +501,21 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-stats uppercase tracking-wide text-zinc-400">Target Sprint</span>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-cyan-300">Target service</label>
+                    <select value={targetService} onChange={(e) => { const next = e.target.value; setTargetService(next); setTargetTopic(serviceTopics[next][0]); }} className="bg-neutral-950/80 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+                      {Object.keys(serviceTopics).map(service => <option key={service} value={service}>{service}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-cyan-300">Topic</label>
+                    <select value={targetTopic} onChange={(e) => setTargetTopic(e.target.value)} className="max-w-[220px] bg-neutral-950/80 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400">
+                      {serviceTopics[targetService].map(topic => <option key={topic} value={topic}>{topic}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                  <span className="mb-1 block text-[10px] font-stats uppercase tracking-wide text-zinc-400">Target Sprint</span>
                   <select
                     value={targetWeek}
                     onChange={(e) => setTargetWeek(Number(e.target.value))}
@@ -495,6 +526,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                     <option value={3}>Week 3</option>
                     <option value={4}>Week 4</option>
                   </select>
+                  </div>
                 </div>
 
                 <button
@@ -503,7 +535,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                   className="px-5 py-2.5 rounded-lg bg-aws-orange hover:bg-amber-500 disabled:bg-neutral-800 disabled:text-zinc-500 disabled:cursor-not-allowed text-zinc-950 font-bold text-xs flex items-center gap-2 transition-all"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Publish All Validated Questions to Sprint W{targetWeek} ({validCount})</span>
+                  <span>Publish {validCount} MCQs to {targetService} / {targetTopic}</span>
                 </button>
               </>
             )}
@@ -513,3 +545,4 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     </div>
   );
 };
+

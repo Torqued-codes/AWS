@@ -92,6 +92,9 @@ export interface Question {
   correctOption: 'A' | 'B' | 'C' | 'D';
   explanation: string;
   awsDocTopic: string;
+  /** Optional MCQ catalogue grouping; kept separate from certification domain for future Supabase migration. */
+  serviceName?: string;
+  topicName?: string;
 }
 
 export interface UserSubmission {
