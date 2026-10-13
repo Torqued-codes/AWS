@@ -124,6 +124,18 @@ export const AdminDashboard: React.FC = () => {
   const [awsDocTopic, setAwsDocTopic] = useState(emptyQuestionForm.awsDocTopic);
   const [selectedMcqService, setSelectedMcqService] = useState('AI/ML');
   const [selectedMcqTopic, setSelectedMcqTopic] = useState(MCQ_SERVICE_TOPICS['AI/ML'][0]);
+  const [newTopicName, setNewTopicName] = useState('');
+  const [serviceTopics, setServiceTopics] = useState<Record<string, string[]>>(() => {
+    try { const saved = localStorage.getItem('aws-cynergy-service-topics'); if (saved) return { ...MCQ_SERVICE_TOPICS, ...JSON.parse(saved) }; } catch {}
+    return MCQ_SERVICE_TOPICS;
+  });
+  const currentTopics = serviceTopics[selectedMcqService] || MCQ_SERVICE_TOPICS[selectedMcqService] || [];
+  const addServiceTopic = () => {
+    const topic = newTopicName.trim(); if (!topic || currentTopics.some(t => t.toLowerCase() === topic.toLowerCase())) return;
+    const updated = { ...serviceTopics, [selectedMcqService]: [...currentTopics, topic] };
+    setServiceTopics(updated); setSelectedMcqTopic(topic); setNewTopicName('');
+    try { localStorage.setItem('aws-cynergy-service-topics', JSON.stringify(updated)); } catch {}
+  };
   const [expandedMcqServices, setExpandedMcqServices] = useState<string[]>(['AI/ML']);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
   const [showDeleteAllQuestionsConfirm, setShowDeleteAllQuestionsConfirm] = useState(false);
@@ -306,7 +318,7 @@ export const AdminDashboard: React.FC = () => {
     setAwsDocTopic(q.awsDocTopic);
     const service = q.serviceName && MCQ_SERVICE_TOPICS[q.serviceName] ? q.serviceName : 'AI/ML';
     setSelectedMcqService(service);
-    setSelectedMcqTopic(q.topicName || MCQ_SERVICE_TOPICS[service][0]);
+    setSelectedMcqTopic(q.topicName || (serviceTopics[service] || MCQ_SERVICE_TOPICS[service])[0]);
   };
 
   const handleSubmitQuestion = (e: React.FormEvent) => {
@@ -859,66 +871,37 @@ export const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={LABEL}>AWS Service</label>
-                    <select value={selectedMcqService} onChange={(e) => { const service = e.target.value; setSelectedMcqService(service); setSelectedMcqTopic(MCQ_SERVICE_TOPICS[service][0]); }} className={INPUT}>
-                      {Object.keys(MCQ_SERVICE_TOPICS).map(service => <option key={service} value={service}>{service}</option>)}
+                    <select value={selectedMcqService} onChange={(e) => { const service = e.target.value; setSelectedMcqService(service); setSelectedMcqTopic((serviceTopics[service] || MCQ_SERVICE_TOPICS[service])[0]); }} className={INPUT}>
+                      {Object.keys(serviceTopics).map(service => <option key={service} value={service}>{service}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className={LABEL}>Topic within {selectedMcqService}</label>
                     <select value={selectedMcqTopic} onChange={(e) => setSelectedMcqTopic(e.target.value)} className={INPUT}>
-                      {MCQ_SERVICE_TOPICS[selectedMcqService].map(topic => <option key={topic} value={topic}>{topic}</option>)}
+                      {currentTopics.map(topic => <option key={topic} value={topic}>{topic}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {Object.keys(MCQ_SERVICE_TOPICS).map(service => (
-                    <button key={service} type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic(MCQ_SERVICE_TOPICS[service][0]); }} className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${selectedMcqService === service ? 'border-aws-orange bg-aws-orange/15 text-amber-300' : 'border-neutral-700 bg-neutral-950/50 text-zinc-400 hover:text-white'}`}>
+                  {Object.keys(serviceTopics).map(service => (
+                    <button key={service} type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic((serviceTopics[service] || MCQ_SERVICE_TOPICS[service])[0]); }} className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${selectedMcqService === service ? 'border-aws-orange bg-aws-orange/15 text-amber-300' : 'border-neutral-700 bg-neutral-950/50 text-zinc-400 hover:text-white'}`}>
                       {service}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className={LABEL}>Week Schedule</label>
-                  <select
-                    value={weekNum}
-                    onChange={(e) => setWeekNum(Number(e.target.value))}
-                    className={INPUT}
-                  >
-                    <option value={1}>Week 1</option>
-                    <option value={2}>Week 2</option>
-                    <option value={3}>Week 3</option>
-                    <option value={4}>Week 4</option>
-                    <option value={5}>Week 5</option>
-                    <option value={6}>Week 6</option>
-                    
-                  </select>
+                  <label className={LABEL}>Add topic to {selectedMcqService}</label>
+                  <div className="flex gap-2">
+                    <input value={newTopicName} onChange={e => setNewTopicName(e.target.value)} className={INPUT} placeholder="e.g. Model Training" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addServiceTopic(); } }} />
+                    <button type="button" onClick={addServiceTopic} className="shrink-0 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20">Add topic</button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-zinc-500">New topics are available for manual questions and bulk imports in this browser. Supabase will make them shared across users.</p>
                 </div>
-
-                <div>
-                  <label className={LABEL}>Cert Domain</label>
-                  <select
-                    value={domain}
-                    onChange={(e) => setDomain(e.target.value as CertDomain)}
-                    className={INPUT}
-                  >
-                    <option value="IAM & Security">IAM & Security</option>
-                    <option value="Compute (EC2 & Lambda)">Compute (EC2 & Lambda)</option>
-                    <option value="Storage (S3 & EBS)">Storage (S3 & EBS)</option>
-                    <option value="VPC & Networking">VPC & Networking</option>
-                    <option value="Databases (RDS & DynamoDB)">Databases (RDS & DynamoDB)</option>
-                    <option value="Cloud Architecture & Cost">Cloud Architecture & Cost</option>
-                  </select>
-                </div>
-
                 <div>
                   <label className={LABEL}>Difficulty</label>
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as 'Beginner' | 'Associate' | 'Pro')}
-                    className={INPUT}
-                  >
+                  <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as 'Beginner' | 'Associate' | 'Pro')} className={INPUT}>
                     <option value="Beginner">Beginner (Cloud Practitioner)</option>
                     <option value="Associate">Associate (Solutions Architect)</option>
                     <option value="Pro">Pro / Specialty</option>
@@ -1605,17 +1588,3 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

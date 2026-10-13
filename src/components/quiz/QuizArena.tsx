@@ -215,7 +215,7 @@ export const QuizArena: React.FC = () => {
                 NODE {currentQuestionIndex + 1}/{weekQuestions.length}
               </span>
               <span className="px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-xs font-mono text-cyan-400">
-                {currentQuestion.domain}
+                {currentQuestion.serviceName ? `${currentQuestion.serviceName}${currentQuestion.topicName ? ` · ${currentQuestion.topicName}` : ''}` : currentQuestion.domain}
               </span>
             </div>
 

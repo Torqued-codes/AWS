@@ -92,7 +92,7 @@ export interface Question {
   correctOption: 'A' | 'B' | 'C' | 'D';
   explanation: string;
   awsDocTopic: string;
-  /** Optional MCQ catalogue grouping; kept separate from certification domain for future Supabase migration. */
+  /** AWS service/topic classification used by the student MCQ portal. */
   serviceName?: string;
   topicName?: string;
 }
