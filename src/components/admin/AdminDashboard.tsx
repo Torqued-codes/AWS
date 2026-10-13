@@ -37,6 +37,23 @@ const CATEGORY_PRESETS: { value: string; label: string }[] = [
 ];
 const CUSTOM_CATEGORY_VALUE = '__custom__';
 
+// Service -> topic catalogue used by the admin question-bank UI.
+// Kept as presentation metadata so the existing question and Groq workflows remain intact.
+const MCQ_SERVICE_TOPICS: Record<string, string[]> = {
+  'AI/ML': ['Machine Learning Fundamentals', 'Deep Learning', 'Generative AI & Foundation Models'],
+  Analytics: ['Data Lakes & Storage', 'SQL Querying', 'Data Warehousing & Visualization'],
+  'Developer Tools': ['Version Control', 'CI/CD', 'Build & Deployment'],
+  Security: ['Identity & Access Management', 'Encryption & Data Protection', 'Detection & Compliance'],
+  Storage: ['Object Storage', 'Block Storage', 'File Storage & Backup'],
+  Integration: ['Messaging & Queues', 'Event-Driven Architecture', 'Workflow Orchestration'],
+  Compute: ['Virtual Servers', 'Serverless Computing', 'Containers & Scaling'],
+  Networking: ['VPC & Subnets', 'Routing & Connectivity', 'Security Groups & Network ACLs'],
+  'Community Center': ['AWS Learning Community', 'Events & Builder Resources', 'Cloud Career Skills'],
+  Management: ['Monitoring & Logs', 'Governance & Compliance', 'Cost Management'],
+  IoT: ['IoT Core & Device Connectivity', 'Device Management', 'IoT Data Processing'],
+  'Challenge Zone': ['Cloud Architecture Challenges', 'Troubleshooting', 'Security & Cost Scenarios'],
+};
+
 const emptyQuestionForm = {
   domain: 'IAM & Security' as CertDomain,
   difficulty: 'Associate' as 'Beginner' | 'Associate' | 'Pro',
@@ -105,6 +122,9 @@ export const AdminDashboard: React.FC = () => {
   const [correctOption, setCorrectOption] = useState<'A' | 'B' | 'C' | 'D'>(emptyQuestionForm.correctOption);
   const [explanation, setExplanation] = useState(emptyQuestionForm.explanation);
   const [awsDocTopic, setAwsDocTopic] = useState(emptyQuestionForm.awsDocTopic);
+  const [selectedMcqService, setSelectedMcqService] = useState('AI/ML');
+  const [selectedMcqTopic, setSelectedMcqTopic] = useState(MCQ_SERVICE_TOPICS['AI/ML'][0]);
+  const [expandedMcqServices, setExpandedMcqServices] = useState<string[]>(['AI/ML']);
   const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
   const [showDeleteAllQuestionsConfirm, setShowDeleteAllQuestionsConfirm] = useState(false);
 
@@ -266,6 +286,8 @@ export const AdminDashboard: React.FC = () => {
     setCorrectOption('A');
     setExplanation('');
     setAwsDocTopic('');
+    setSelectedMcqService('AI/ML');
+    setSelectedMcqTopic(MCQ_SERVICE_TOPICS['AI/ML'][0]);
   };
 
   const handleEditQuestionClick = (q: Question) => {
@@ -282,6 +304,9 @@ export const AdminDashboard: React.FC = () => {
     setCorrectOption(q.correctOption);
     setExplanation(q.explanation);
     setAwsDocTopic(q.awsDocTopic);
+    const service = q.serviceName && MCQ_SERVICE_TOPICS[q.serviceName] ? q.serviceName : 'AI/ML';
+    setSelectedMcqService(service);
+    setSelectedMcqTopic(q.topicName || MCQ_SERVICE_TOPICS[service][0]);
   };
 
   const handleSubmitQuestion = (e: React.FormEvent) => {
@@ -301,7 +326,9 @@ export const AdminDashboard: React.FC = () => {
       ],
       correctOption,
       explanation,
-      awsDocTopic: awsDocTopic || 'AWS Cloud Architecture'
+      awsDocTopic: awsDocTopic || 'AWS Cloud Architecture',
+      serviceName: selectedMcqService,
+      topicName: selectedMcqTopic,
     };
 
     soundEngine.playFloorAdded();
@@ -824,6 +851,33 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmitQuestion} className="space-y-4 text-xs font-sans">
+              <div className="rounded-xl border border-cyan-500/25 bg-cyan-950/15 p-4 space-y-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">MCQ destination</p>
+                  <p className="text-[11px] text-zinc-400 mt-1">Choose the AWS service first, then the topic where this question belongs.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={LABEL}>AWS Service</label>
+                    <select value={selectedMcqService} onChange={(e) => { const service = e.target.value; setSelectedMcqService(service); setSelectedMcqTopic(MCQ_SERVICE_TOPICS[service][0]); }} className={INPUT}>
+                      {Object.keys(MCQ_SERVICE_TOPICS).map(service => <option key={service} value={service}>{service}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={LABEL}>Topic within {selectedMcqService}</label>
+                    <select value={selectedMcqTopic} onChange={(e) => setSelectedMcqTopic(e.target.value)} className={INPUT}>
+                      {MCQ_SERVICE_TOPICS[selectedMcqService].map(topic => <option key={topic} value={topic}>{topic}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.keys(MCQ_SERVICE_TOPICS).map(service => (
+                    <button key={service} type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic(MCQ_SERVICE_TOPICS[service][0]); }} className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${selectedMcqService === service ? 'border-aws-orange bg-aws-orange/15 text-amber-300' : 'border-neutral-700 bg-neutral-950/50 text-zinc-400 hover:text-white'}`}>
+                      {service}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className={LABEL}>Week Schedule</label>
@@ -967,37 +1021,43 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </h3>
 
-            <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
-              {questions.map((q, idx) => (
-                <div key={q.id} className={`p-3 bg-neutral-950/60 border rounded-lg text-[11px] font-sans ${editingQuestionId === q.id ? 'border-aws-orange/60' : 'border-neutral-800'}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-zinc-400 font-stats font-bold">W{q.weekNumber} • Q{idx + 1}</span>
-                    <span className="text-cyan-400 truncate max-w-[100px]">{q.domain}</span>
-                  </div>
-                  <p className="text-zinc-200 line-clamp-2">{q.questionText}</p>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-emerald-400 font-stats font-bold">
-                      Correct: {q.correctOption}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleEditQuestionClick(q)}
-                        className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-zinc-300 hover:text-white transition-colors"
-                        title="Edit question"
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => setQuestionToDelete(q)}
-                        className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 transition-colors"
-                        title="Delete question"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="space-y-2.5 max-h-[650px] overflow-y-auto pr-1">
+              {Object.entries(MCQ_SERVICE_TOPICS).map(([service, topics]) => {
+                const serviceQuestions = questions.filter(q => (q.serviceName || 'Uncategorised') === service);
+                const isExpanded = expandedMcqServices.includes(service);
+                return (
+                  <section key={service} className={`rounded-xl border overflow-hidden ${selectedMcqService === service ? 'border-aws-orange/50' : 'border-neutral-800'}`}>
+                    <button type="button" onClick={() => setExpandedMcqServices(prev => prev.includes(service) ? prev.filter(item => item !== service) : [...prev, service])} className={`w-full flex items-center justify-between gap-3 p-3 text-left ${selectedMcqService === service ? 'bg-aws-orange/10' : 'bg-neutral-950/60 hover:bg-neutral-900'}`}>
+                      <span className="min-w-0"><span className={`block text-xs font-bold ${selectedMcqService === service ? 'text-amber-300' : 'text-white'}`}>{service}</span><span className="block text-[10px] text-zinc-500 mt-0.5">{topics.length} topics · {serviceQuestions.length} MCQs</span></span>
+                      <span className="text-zinc-400 text-sm">{isExpanded ? '−' : '+'}</span>
+                    </button>
+                    {isExpanded && <div className="p-2 space-y-2 bg-neutral-900/40">
+                      {topics.map(topic => {
+                        const topicQuestions = serviceQuestions.filter(q => (q.topicName || '') === topic);
+                        const activeTopic = selectedMcqService === service && selectedMcqTopic === topic;
+                        return <div key={topic} className={`rounded-lg border ${activeTopic ? 'border-cyan-500/40 bg-cyan-950/10' : 'border-neutral-800 bg-neutral-950/30'}`}>
+                          <button type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic(topic); }} className="w-full text-left px-3 py-2 flex items-center justify-between gap-2">
+                            <span className={`text-[11px] font-semibold ${activeTopic ? 'text-cyan-300' : 'text-zinc-300'}`}>{topic}</span><span className="text-[10px] text-zinc-500">{topicQuestions.length} MCQs</span>
+                          </button>
+                          {activeTopic && <div className="px-2 pb-2 space-y-2">
+                            {topicQuestions.map((q, idx) => <div key={q.id} className={`p-2.5 bg-neutral-950/70 border rounded-lg text-[11px] font-sans ${editingQuestionId === q.id ? 'border-aws-orange/60' : 'border-neutral-800'}`}>
+                              <div className="flex items-center justify-between mb-1"><span className="text-zinc-500 font-stats font-bold">W{q.weekNumber} • Q{idx + 1}</span><span className="text-cyan-400 truncate max-w-[100px]">{q.domain}</span></div>
+                              <p className="text-zinc-200 line-clamp-2">{q.questionText}</p>
+                              <div className="mt-2 flex items-center justify-between"><span className="text-emerald-400 font-stats font-bold">Correct: {q.correctOption}</span><div className="flex items-center gap-1.5">
+                                <button onClick={() => handleEditQuestionClick(q)} className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-zinc-300 hover:text-white transition-colors" title="Edit question"><Pencil className="w-3 h-3" /></button>
+                                <button onClick={() => setQuestionToDelete(q)} className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 transition-colors" title="Delete question"><Trash2 className="w-3 h-3" /></button>
+                              </div></div>
+                            </div>)}
+                            {topicQuestions.length === 0 && <p className="px-2 py-3 text-[10px] text-zinc-500">No MCQs in this topic yet. Use the form or Bulk Import to add questions here.</p>}
+                          </div>}
+                        </div>;
+                      })}
+                      {serviceQuestions.some(q => !q.topicName) && <p className="text-[10px] text-amber-300 px-2">Some older questions have no topic assigned. Edit them to categorise them.</p>}
+                    </div>}
+                  </section>
+                );
+              })}
+              {questions.some(q => !q.serviceName || !MCQ_SERVICE_TOPICS[q.serviceName]) && <section className="rounded-xl border border-amber-500/30 overflow-hidden"><div className="p-3 bg-amber-950/20 text-amber-300 text-xs font-bold">Legacy / uncategorised questions</div><div className="p-2 space-y-2">{questions.filter(q => !q.serviceName || !MCQ_SERVICE_TOPICS[q.serviceName]).map((q, idx) => <div key={q.id} className="p-3 bg-neutral-950/60 border border-neutral-800 rounded-lg text-[11px]"><p className="text-zinc-400 mb-1">W{q.weekNumber} · Legacy Q{idx + 1}</p><p className="text-zinc-200">{q.questionText}</p><button onClick={() => handleEditQuestionClick(q)} className="mt-2 p-1.5 rounded-lg bg-neutral-800 text-zinc-300"><Pencil className="w-3 h-3" /></button></div>)}</div></section>}
               {questions.length === 0 && (
                 <div className="py-8 text-center text-zinc-500 text-xs">No questions in the bank yet.</div>
               )}
@@ -1545,3 +1605,17 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
