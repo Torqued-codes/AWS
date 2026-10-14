@@ -26,7 +26,7 @@ import { sortStudents } from '../../utils/ranking';
 
 const CARD = 'bg-neutral-900/60 border border-neutral-800 rounded-xl shadow-2xl backdrop-blur-md';
 const INPUT = 'w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-3 py-2 text-sm font-sans text-white placeholder-neutral-500 focus:outline-none focus:border-aws-orange transition-colors';
-const LABEL = 'block text-[11px] font-stats tracking-wide uppercase text-neutral-400 mb-1.5';
+const LABEL = 'block text-sm font-stats tracking-wide uppercase text-neutral-400 mb-1.5';
 
 const CATEGORY_PRESETS: { value: string; label: string }[] = [
   { value: 'Voucher', label: 'Exam Discount Voucher' },
@@ -480,38 +480,18 @@ export const AdminDashboard: React.FC = () => {
             </h1>
         
           </div>
-          <p className="text-xs text-zinc-400 font-sans mt-1.5">
-            Manage registered student accounts, master question banks, and weekly challenge sprints.
+          <p className="text-sm text-zinc-400 font-sans mt-1.5">
+            Manage registered student accounts and service-based question banks.
           </p>
         </div>
 
-        {/* Active Week Switcher */}
-        <div className="flex items-center gap-2 bg-neutral-950/60 border border-neutral-800 p-2 rounded-lg">
-          <span className="text-[11px] font-stats font-semibold text-zinc-400 pl-2 uppercase tracking-wide">Active Sprint</span>
-          {[1, 2, 3, 4].map((w) => (
-            <button
-              key={w}
-              onClick={() => {
-                soundEngine.playTap();
-                setActiveWeek(w);
-              }}
-              className={`w-8 h-8 rounded-lg text-xs font-stats font-bold transition-all ${
-                activeWeek === w
-                  ? 'bg-aws-orange text-black shadow-sm'
-                  : 'bg-neutral-900 text-zinc-400 hover:text-white'
-              }`}
-            >
-              W{w}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-6 border-b border-neutral-800 pb-2 overflow-x-auto">
         <button
           onClick={() => { soundEngine.playTap(); setActiveAdminTab('students'); }}
-          className={`px-4 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeAdminTab === 'students'
               ? 'bg-aws-orange text-black font-bold'
               : 'text-zinc-400 hover:text-white hover:bg-neutral-900'
@@ -523,7 +503,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => { soundEngine.playTap(); setActiveAdminTab('questions'); }}
-          className={`px-4 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeAdminTab === 'questions'
               ? 'bg-aws-orange text-black font-bold'
               : 'text-zinc-400 hover:text-white hover:bg-neutral-900'
@@ -535,7 +515,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => { soundEngine.playTap(); setActiveAdminTab('announcements'); }}
-          className={`px-4 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeAdminTab === 'announcements'
               ? 'bg-aws-orange text-black font-bold'
               : 'text-zinc-400 hover:text-white hover:bg-neutral-900'
@@ -547,7 +527,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => { soundEngine.playTap(); setActiveAdminTab('winners'); }}
-          className={`px-4 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeAdminTab === 'winners'
               ? 'bg-aws-orange text-black font-bold'
               : 'text-zinc-400 hover:text-white hover:bg-neutral-900'
@@ -559,7 +539,7 @@ export const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => { soundEngine.playTap(); setActiveAdminTab('settings'); }}
-          className={`px-4 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
+          className={`px-4 py-2 rounded-lg text-sm font-sans font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${
             activeAdminTab === 'settings'
               ? 'bg-aws-orange text-black font-bold'
               : 'text-zinc-400 hover:text-white hover:bg-neutral-900'
@@ -572,7 +552,7 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Success Notification */}
       {showSuccessToast && (
-        <div className="mb-6 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-xs font-sans font-semibold flex items-center gap-2 animate-fade-in">
+        <div className="mb-6 p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-sm font-sans font-semibold flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="w-4 h-4" />
           <span>Operation completed successfully! Database updated.</span>
         </div>
@@ -590,14 +570,14 @@ export const AdminDashboard: React.FC = () => {
                 placeholder="Filter by name, roll number, or department..."
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
-                className="w-full bg-neutral-950/80 border border-neutral-800 rounded-lg pl-10 pr-4 py-2 text-xs font-sans text-white placeholder-zinc-500 focus:outline-none focus:border-aws-orange"
+                className="w-full bg-neutral-950/80 border border-neutral-800 rounded-lg pl-10 pr-4 py-2 text-sm font-sans text-white placeholder-zinc-500 focus:outline-none focus:border-aws-orange"
               />
             </div>
 
             <select
               value={studentDeptFilter}
               onChange={(e) => setStudentDeptFilter(e.target.value as Department | 'ALL')}
-              className="bg-neutral-950/80 border border-neutral-800 rounded-lg px-3 py-2 text-xs font-sans text-white focus:outline-none focus:border-aws-orange sm:w-44"
+              className="bg-neutral-950/80 border border-neutral-800 rounded-lg px-3 py-2 text-sm font-sans text-white focus:outline-none focus:border-aws-orange sm:w-44"
             >
               <option value="ALL">All Departments</option>
               {DEPARTMENTS.map(d => (
@@ -605,13 +585,13 @@ export const AdminDashboard: React.FC = () => {
               ))}
             </select>
 
-            <span className="text-xs font-sans text-zinc-400 self-center whitespace-nowrap">
+            <span className="text-sm font-sans text-zinc-400 self-center whitespace-nowrap">
               {filteredStudents.length} of {students.length} students
             </span>
 
             <button
               onClick={() => { soundEngine.playTap(); setShowAddStudent(v => !v); }}
-              className="px-3.5 py-2 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 text-xs font-sans font-bold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap"
+              className="px-3.5 py-2 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 text-sm font-sans font-bold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span>Add Student</span>
@@ -742,7 +722,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-sans font-bold text-xs shrink-0"
+                    className="px-5 py-2 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-sans font-bold text-sm shrink-0"
                   >
                     Register Student
                   </button>
@@ -753,8 +733,8 @@ export const AdminDashboard: React.FC = () => {
 
           <div className={`${CARD} overflow-hidden`}>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-neutral-950/60 text-zinc-400 text-[11px] font-stats uppercase tracking-wider border-b border-neutral-800">
+              <table className="w-full text-left text-sm font-sans">
+                <thead className="bg-neutral-950/60 text-zinc-400 text-sm font-stats uppercase tracking-wider border-b border-neutral-800">
                   <tr>
                     <th className="py-3.5 px-4">Student</th>
                     <th className="py-3.5 px-4">Roll Number</th>
@@ -782,7 +762,7 @@ export const AdminDashboard: React.FC = () => {
                       <td className="py-3 px-4 text-center">
                         <button
                           onClick={() => setStudentToRemove(student)}
-                          className="p-1.5 rounded-lg bg-rose-950/40 text-rose-400 hover:bg-rose-900/60 border border-rose-500/30 transition-all inline-flex items-center gap-1 text-[10px]"
+                          className="p-1.5 rounded-lg bg-rose-950/40 text-rose-400 hover:bg-rose-900/60 border border-rose-500/30 transition-all inline-flex items-center gap-1 text-sm"
                           title="Remove student from database"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -811,19 +791,19 @@ export const AdminDashboard: React.FC = () => {
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-display font-bold text-white mb-1">Remove Student Account?</h3>
-                <p className="text-xs text-zinc-400 mb-6">
+                <p className="text-sm text-zinc-400 mb-6">
                   Are you sure you want to remove <strong className="text-white">{studentToRemove.name}</strong> ({studentToRemove.rollNumber})? Their 3D tower and scores will be deleted.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleConfirmRemove}
-                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
                   >
                     Yes, Remove
                   </button>
                   <button
                     onClick={() => setStudentToRemove(null)}
-                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-sm border border-neutral-700 transition-all"
                   >
                     Cancel
                   </button>
@@ -850,7 +830,7 @@ export const AdminDashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => { soundEngine.playTap(); resetQuestionForm(); }}
-                    className="text-[11px] font-sans font-semibold text-zinc-400 hover:text-white bg-neutral-800/60 border border-neutral-700 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                    className="text-sm font-sans font-semibold text-zinc-400 hover:text-white bg-neutral-800/60 border border-neutral-700 px-2.5 py-1 rounded-lg flex items-center gap-1"
                   >
                     <X className="w-3 h-3" />
                     <span>Cancel Edit</span>
@@ -859,7 +839,7 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => { soundEngine.playTap(); setShowBulkImport(true); }}
-                  className="text-[11px] font-sans font-semibold text-black bg-aws-orange hover:bg-amber-500 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                  className="text-sm font-sans font-semibold text-black bg-aws-orange hover:bg-amber-500 px-2.5 py-1 rounded-lg flex items-center gap-1"
                 >
                   <FileUp className="w-3 h-3" />
                   <span>Bulk Import (PDF/DOCX)</span>
@@ -867,7 +847,7 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleLoadSampleQuestion}
-                  className="text-[11px] font-sans font-semibold text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                  className="text-sm font-sans font-semibold text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1"
                 >
                   <Sparkles className="w-3 h-3" />
                   <span>Auto-Fill Cert Sample</span>
@@ -875,11 +855,11 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmitQuestion} className="space-y-4 text-xs font-sans">
+            <form onSubmit={handleSubmitQuestion} className="space-y-4 text-sm font-sans">
               <div className="rounded-xl border border-cyan-500/25 bg-cyan-950/15 p-4 space-y-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">MCQ destination</p>
-                  <p className="text-[11px] text-zinc-400 mt-1">Choose the AWS service first, then the topic where this question belongs.</p>
+                  <p className="text-sm uppercase tracking-widest font-bold text-cyan-300">MCQ destination</p>
+                  <p className="text-sm text-zinc-400 mt-1">Choose the AWS service first, then the topic where this question belongs.</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -897,7 +877,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.keys(serviceTopics).map(service => (
-                    <button key={service} type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic((serviceTopics[service] || MCQ_SERVICE_TOPICS[service])[0]); }} className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${selectedMcqService === service ? 'border-aws-orange bg-aws-orange/15 text-amber-300' : 'border-neutral-700 bg-neutral-950/50 text-zinc-400 hover:text-white'}`}>
+                    <button key={service} type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic((serviceTopics[service] || MCQ_SERVICE_TOPICS[service])[0]); }} className={`rounded-full border px-2.5 py-1 text-sm transition-colors ${selectedMcqService === service ? 'border-aws-orange bg-aws-orange/15 text-amber-300' : 'border-neutral-700 bg-neutral-950/50 text-zinc-400 hover:text-white'}`}>
                       {service}
                     </button>
                   ))}
@@ -908,9 +888,9 @@ export const AdminDashboard: React.FC = () => {
                   <label className={LABEL}>Add topic to {selectedMcqService}</label>
                   <div className="flex gap-2">
                     <input value={newTopicName} onChange={e => setNewTopicName(e.target.value)} className={INPUT} placeholder="e.g. Model Training" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addServiceTopic(); } }} />
-                    <button type="button" onClick={addServiceTopic} className="shrink-0 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20">Add topic</button>
+                    <button type="button" onClick={addServiceTopic} className="shrink-0 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 text-sm font-bold text-cyan-300 hover:bg-cyan-500/20">Add topic</button>
                   </div>
-                  <p className="mt-1 text-[10px] text-zinc-500">New topics are available for manual questions and bulk imports in this browser. Supabase will make them shared across users.</p>
+                  <p className="mt-1 text-sm text-zinc-500">New topics are available for manual questions and bulk imports in this browser. Supabase will make them shared across users.</p>
                 </div>
                 <div>
                   <label className={LABEL}>Difficulty</label>
@@ -991,32 +971,15 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" />
-                <span>{editingQuestionId ? `Update Question` : `Save Question to Week ${weekNum}`}</span>
+                <span>{editingQuestionId ? `Update Question` : `Save Question`}</span>
               </button>
             </form>
           </div>
 
           <div className={`${CARD} p-5`}>
-            <h3 className="text-xs font-display font-bold text-white mb-3 flex items-center justify-between">
-              <span>Master Question Bank</span>
-              <div className="flex items-center gap-2">
-                <span className="text-aws-orange font-stats">{questions.length} Items</span>
-                {questions.length > 0 && (
-                  <button
-                    onClick={() => setShowDeleteAllQuestionsConfirm(true)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 transition-colors text-[10px] font-bold"
-                    title="Delete all questions"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Delete All</span>
-                  </button>
-                )}
-              </div>
-            </h3>
-
             <div className="space-y-2.5 pr-1">
               {Object.entries(MCQ_SERVICE_TOPICS).map(([service, topics]) => {
                 const serviceQuestions = questions.filter(q => (q.serviceName || 'Uncategorised') === service);
@@ -1024,7 +987,7 @@ export const AdminDashboard: React.FC = () => {
                 return (
                   <section key={service} className={`rounded-xl border overflow-hidden ${selectedMcqService === service ? 'border-aws-orange/50' : 'border-neutral-800'}`}>
                     <button type="button" onClick={() => setExpandedMcqServices(prev => prev.includes(service) ? prev.filter(item => item !== service) : [...prev, service])} className={`w-full flex items-center justify-between gap-3 p-3 text-left ${selectedMcqService === service ? 'bg-aws-orange/10' : 'bg-neutral-950/60 hover:bg-neutral-900'}`}>
-                      <span className="min-w-0"><span className={`block text-xs font-bold ${selectedMcqService === service ? 'text-amber-300' : 'text-white'}`}>{service}</span><span className="block text-[10px] text-zinc-500 mt-0.5">{topics.length} topics · {serviceQuestions.length} MCQs</span></span>
+                      <span className="min-w-0"><span className={`block text-sm font-bold ${selectedMcqService === service ? 'text-amber-300' : 'text-white'}`}>{service}</span><span className="block text-sm text-zinc-500 mt-0.5">{topics.length} topics · {serviceQuestions.length} MCQs</span></span>
                       <span className="text-zinc-400 text-sm">{isExpanded ? '−' : '+'}</span>
                     </button>
                     {isExpanded && <div className="p-2 space-y-2 bg-neutral-900/40">
@@ -1034,12 +997,13 @@ export const AdminDashboard: React.FC = () => {
                         return <div key={topic} className={`rounded-lg border ${activeTopic ? 'border-cyan-500/40 bg-cyan-950/10' : 'border-neutral-800 bg-neutral-950/30'}`}>
                           <div className="flex items-center gap-1 px-2">
                             <button type="button" onClick={() => { setSelectedMcqService(service); setSelectedMcqTopic(topic); }} className="min-w-0 flex-1 text-left py-2 flex items-center justify-between gap-2">
-                              <span className={`text-[11px] font-semibold truncate ${activeTopic ? 'text-cyan-300' : 'text-zinc-300'}`}>{topic}</span><span className="shrink-0 text-[10px] text-zinc-500">{topicQuestions.length} MCQs</span>
+                              <span className={`text-sm font-semibold truncate ${activeTopic ? 'text-cyan-300' : 'text-zinc-300'}`}>{topic}</span><span className="shrink-0 text-sm text-zinc-500">{topicQuestions.length} MCQs</span>
                             </button>
-                            <button type="button" onClick={() => removeServiceTopic(service, topic)} className="shrink-0 p-1.5 rounded-md text-zinc-500 hover:text-rose-300 hover:bg-rose-950/40" title={`Delete ${topic} topic`} aria-label={`Delete ${topic} topic`}><Trash2 className="w-3 h-3" /></button>
+                            {topicQuestions.length > 0 && <button type="button" onClick={() => { if (window.confirm(`Delete all ${topicQuestions.length} MCQs from "${topic}"? This cannot be undone.`)) topicQuestions.forEach(question => deleteQuestion(question.id)); }} className="shrink-0 p-1.5 rounded-md text-rose-400 hover:text-rose-300 hover:bg-rose-950/40" title={`Delete all MCQs in ${topic}`} aria-label={`Delete all MCQs in ${topic}`}><Trash2 className="w-3.5 h-3.5" /><span className="ml-1 text-sm">Delete all</span></button>}
+                            <button type="button" onClick={() => removeServiceTopic(service, topic)} className="shrink-0 p-1.5 rounded-md text-zinc-500 hover:text-rose-300 hover:bg-rose-950/40" title={`Delete ${topic} topic`} aria-label={`Delete ${topic} topic`}><Trash2 className="w-3.5 h-3.5" /></button>
                           </div>
                           {activeTopic && <div className="px-2 pb-2 space-y-2">
-                            {topicQuestions.map((q, idx) => <div key={q.id} className={`p-2.5 bg-neutral-950/70 border rounded-lg text-[11px] font-sans ${editingQuestionId === q.id ? 'border-aws-orange/60' : 'border-neutral-800'}`}>
+                            {topicQuestions.map((q, idx) => <div key={q.id} className={`p-2.5 bg-neutral-950/70 border rounded-lg text-sm font-sans ${editingQuestionId === q.id ? 'border-aws-orange/60' : 'border-neutral-800'}`}>
                               <div className="flex items-center justify-between mb-1"><span className="text-zinc-500 font-stats font-bold">W{q.weekNumber} • Q{idx + 1}</span><span className="text-cyan-400 truncate max-w-[100px]">{q.domain}</span></div>
                               <p className="text-zinc-200 line-clamp-2">{q.questionText}</p>
                               <div className="mt-2 flex items-center justify-between"><span className="text-emerald-400 font-stats font-bold">Correct: {q.correctOption}</span><div className="flex items-center gap-1.5">
@@ -1047,17 +1011,17 @@ export const AdminDashboard: React.FC = () => {
                                 <button onClick={() => setQuestionToDelete(q)} className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 transition-colors" title="Delete question"><Trash2 className="w-3 h-3" /></button>
                               </div></div>
                             </div>)}
-                            {topicQuestions.length === 0 && <p className="px-2 py-3 text-[10px] text-zinc-500">No MCQs in this topic yet. Use the form or Bulk Import to add questions here.</p>}
+                            {topicQuestions.length === 0 && <p className="px-2 py-3 text-sm text-zinc-500">No MCQs in this topic yet. Use the form or Bulk Import to add questions here.</p>}
                           </div>}
                         </div>;
                       })}
-                      {serviceQuestions.some(q => !q.topicName) && <p className="text-[10px] text-amber-300 px-2">Some older questions have no topic assigned. Edit them to categorise them.</p>}
+                      {serviceQuestions.some(q => !q.topicName) && <p className="text-sm text-amber-300 px-2">Some older questions have no topic assigned. Edit them to categorise them.</p>}
                     </div>}
                   </section>
                 );
               })}
               {questions.length === 0 && (
-                <div className="py-8 text-center text-zinc-500 text-xs">No questions in the bank yet.</div>
+                <div className="py-8 text-center text-zinc-500 text-sm">No questions in the bank yet.</div>
               )}
             </div>
           </div>
@@ -1070,19 +1034,19 @@ export const AdminDashboard: React.FC = () => {
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-display font-bold text-white mb-1">Delete This Question?</h3>
-                <p className="text-xs text-zinc-400 mb-6">
+                <p className="text-sm text-zinc-400 mb-6">
                   This will permanently remove it from Week {questionToDelete.weekNumber}'s question bank.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleConfirmDeleteQuestion}
-                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
                   >
                     Yes, Delete
                   </button>
                   <button
                     onClick={() => setQuestionToDelete(null)}
-                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-sm border border-neutral-700 transition-all"
                   >
                     Cancel
                   </button>
@@ -1099,19 +1063,19 @@ export const AdminDashboard: React.FC = () => {
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-display font-bold text-white mb-1">Delete All Questions?</h3>
-                <p className="text-xs text-zinc-400 mb-6">
+                <p className="text-sm text-zinc-400 mb-6">
                   This will permanently remove all <strong className="text-white">{questions.length}</strong> questions from the Master Question Bank across every week. This cannot be undone.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleConfirmDeleteAllQuestions}
-                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
                   >
                     Yes, Delete All
                   </button>
                   <button
                     onClick={() => setShowDeleteAllQuestionsConfirm(false)}
-                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-sm border border-neutral-700 transition-all"
                   >
                     Cancel
                   </button>
@@ -1125,7 +1089,7 @@ export const AdminDashboard: React.FC = () => {
       {/* Tab 3: Announcements */}
       {activeAdminTab === 'announcements' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className={`${CARD} p-6 font-sans text-xs`}>
+          <div className={`${CARD} p-6 font-sans text-sm`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-display font-bold text-white flex items-center gap-2">
                 <Radio className="w-4 h-4 text-aws-orange" />
@@ -1135,7 +1099,7 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => { soundEngine.playTap(); resetAnnouncementForm(); }}
-                  className="text-[11px] font-sans font-semibold text-zinc-400 hover:text-white bg-neutral-800/60 border border-neutral-700 px-2.5 py-1 rounded-lg flex items-center gap-1"
+                  className="text-sm font-sans font-semibold text-zinc-400 hover:text-white bg-neutral-800/60 border border-neutral-700 px-2.5 py-1 rounded-lg flex items-center gap-1"
                 >
                   <X className="w-3 h-3" />
                   <span>Cancel Edit</span>
@@ -1220,15 +1184,15 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-bold text-xs"
+                className="w-full py-3 rounded-lg bg-aws-orange hover:bg-amber-500 text-zinc-950 font-bold text-sm"
               >
                 {editingAnnouncementId ? 'Update Broadcast' : 'Broadcast Announcement'}
               </button>
             </form>
           </div>
 
-          <div className={`${CARD} p-5 font-sans text-xs`}>
-            <h3 className="text-xs font-display font-bold text-white mb-3 flex items-center justify-between">
+          <div className={`${CARD} p-5 font-sans text-sm`}>
+            <h3 className="text-sm font-display font-bold text-white mb-3 flex items-center justify-between">
               <span>Active Broadcasts</span>
               <span className="text-aws-orange font-stats">{announcements.length} Live</span>
             </h3>
@@ -1237,10 +1201,10 @@ export const AdminDashboard: React.FC = () => {
               {announcements.map((a) => (
                 <div key={a.id} className={`p-3 bg-neutral-950/60 border rounded-lg ${editingAnnouncementId === a.id ? 'border-aws-orange/60' : 'border-neutral-800'}`}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="px-2 py-0.5 rounded bg-neutral-900 text-zinc-400 text-[10px] font-stats uppercase font-bold">
+                    <span className="px-2 py-0.5 rounded bg-neutral-900 text-zinc-400 text-sm font-stats uppercase font-bold">
                       {a.category}
                     </span>
-                    <span className="text-[10px] text-zinc-500">{a.date}</span>
+                    <span className="text-sm text-zinc-500">{a.date}</span>
                   </div>
                   <p className="text-white font-semibold mb-1">{a.title}</p>
                   <p className="text-zinc-400 line-clamp-2 mb-2">{a.description}</p>
@@ -1263,7 +1227,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               ))}
               {announcements.length === 0 && (
-                <div className="py-8 text-center text-zinc-500 text-xs">No active broadcasts.</div>
+                <div className="py-8 text-center text-zinc-500 text-sm">No active broadcasts.</div>
               )}
             </div>
           </div>
@@ -1276,19 +1240,19 @@ export const AdminDashboard: React.FC = () => {
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-display font-bold text-white mb-1">Remove This Broadcast?</h3>
-                <p className="text-xs text-zinc-400 mb-6">
+                <p className="text-sm text-zinc-400 mb-6">
                   "{announcementToDelete.title}" will be pulled from the student portal's Certs & Events feed immediately.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleConfirmDeleteAnnouncement}
-                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
                   >
                     Yes, Remove
                   </button>
                   <button
                     onClick={() => setAnnouncementToDelete(null)}
-                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-sm border border-neutral-700 transition-all"
                   >
                     Cancel
                   </button>
@@ -1308,7 +1272,7 @@ export const AdminDashboard: React.FC = () => {
                 <Trophy className="w-4 h-4 text-aws-orange" />
                 Announce Winners
               </h2>
-              <p className="text-[11px] text-zinc-400 mt-1 max-w-md">
+              <p className="text-sm text-zinc-400 mt-1 max-w-md">
                 Students can only view/download a certificate once you announce them here —
                 live leaderboard position alone no longer unlocks it. This goes out to every
                 student's portal the moment you announce.
@@ -1321,7 +1285,7 @@ export const AdminDashboard: React.FC = () => {
                 <button
                   key={type}
                   onClick={() => handleSwitchPeriodType(type)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-bold capitalize transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-sm font-bold capitalize transition-all ${
                     winnerPeriodType === type
                       ? 'bg-aws-orange text-black'
                       : 'text-zinc-400 hover:text-white'
@@ -1356,7 +1320,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {winnerPeriodKey.trim() && getWinnersForPeriod(winnerPeriodType, winnerPeriodKey.trim()) && (
-              <div className="mb-4 p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-sm font-semibold flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span>This period already has announced winners. Adjust the selection below and re-announce to update it.</span>
               </div>
@@ -1367,7 +1331,7 @@ export const AdminDashboard: React.FC = () => {
               {winnerPeriodType === 'weekly' && (
                 <button
                   onClick={handleUseSuggestedTop5}
-                  className="text-[11px] font-semibold text-cyan-300 hover:text-cyan-200 flex items-center gap-1"
+                  className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 flex items-center gap-1"
                 >
                   <Sparkles className="w-3 h-3" />
                   Use current live Top 5
@@ -1376,7 +1340,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {winnerSelection.length === 0 ? (
-              <div className="p-4 rounded-lg border border-dashed border-neutral-800 text-center text-[11px] text-zinc-500 mb-4">
+              <div className="p-4 rounded-lg border border-dashed border-neutral-800 text-center text-sm text-zinc-500 mb-4">
                 No students selected yet. Search below{winnerPeriodType === 'weekly' ? ' or use the live Top 5 shortcut' : ''}.
               </div>
             ) : (
@@ -1386,12 +1350,12 @@ export const AdminDashboard: React.FC = () => {
                   if (!s) return null;
                   return (
                     <div key={id} className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950/60 border border-neutral-800">
-                      <span className="w-6 h-6 rounded-full bg-aws-orange/15 text-aws-orange border border-aws-orange/30 flex items-center justify-center font-stats font-bold text-[11px] shrink-0">
+                      <span className="w-6 h-6 rounded-full bg-aws-orange/15 text-aws-orange border border-aws-orange/30 flex items-center justify-center font-stats font-bold text-sm shrink-0">
                         {idx + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-white font-semibold text-xs truncate">{s.name}</div>
-                        <div className="text-[10px] text-zinc-500 font-stats">{s.rollNumber} · {s.weeklyPoints ?? s.points} pts</div>
+                        <div className="text-white font-semibold text-sm truncate">{s.name}</div>
+                        <div className="text-sm text-zinc-500 font-stats">{s.rollNumber} · {s.weeklyPoints ?? s.points} pts</div>
                       </div>
                       <button
                         onClick={() => moveWinnerRank(idx, -1)}
@@ -1442,7 +1406,7 @@ export const AdminDashboard: React.FC = () => {
                         disabled={!alreadyIn && winnerSelection.length >= 5}
                         className="w-full text-left px-3 py-2 bg-neutral-950/80 hover:bg-neutral-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between gap-2"
                       >
-                        <span className="text-xs text-white">{s.name} <span className="text-zinc-500 font-stats">({s.rollNumber})</span></span>
+                        <span className="text-sm text-white">{s.name} <span className="text-zinc-500 font-stats">({s.rollNumber})</span></span>
                         {alreadyIn && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                       </button>
                     );
@@ -1466,9 +1430,9 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Announced periods list — all three types together */}
           <div className={`${CARD} p-5`}>
-            <h3 className="text-xs font-display font-bold text-white mb-3">Announced Periods</h3>
+            <h3 className="text-sm font-display font-bold text-white mb-3">Announced Periods</h3>
             {Object.keys(weeklyWinners).length === 0 && Object.keys(monthlyWinners).length === 0 && Object.keys(yearlyWinners).length === 0 ? (
-              <p className="text-[11px] text-zinc-500">No periods announced yet.</p>
+              <p className="text-sm text-zinc-500">No periods announced yet.</p>
             ) : (
               <div className="space-y-2">
                 {([
@@ -1485,14 +1449,14 @@ export const AdminDashboard: React.FC = () => {
                       }`}
                     >
                       <div>
-                        <div className="text-white font-semibold text-xs mb-1 flex items-center gap-2">
-                          <span className="uppercase text-[9px] tracking-wide text-cyan-400 font-bold">{type}</span>
+                        <div className="text-white font-semibold text-sm mb-1 flex items-center gap-2">
+                          <span className="uppercase text-sm tracking-wide text-cyan-400 font-bold">{type}</span>
                           <span>{label}</span>
                           {isBeingEdited && (
-                            <span className="text-[9px] uppercase tracking-wide text-aws-orange font-bold">Editing above ↑</span>
+                            <span className="text-sm uppercase tracking-wide text-aws-orange font-bold">Editing above ↑</span>
                           )}
                         </div>
-                        <div className="text-[11px] text-zinc-400">
+                        <div className="text-sm text-zinc-400">
                           {ids.map((id, i) => {
                             const s = students.find(st => st.id === id);
                             return s ? `${i + 1}. ${s.name}` : null;
@@ -1502,14 +1466,14 @@ export const AdminDashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleLoadPeriodForEditing(type, key)}
-                          className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-[11px] font-semibold flex items-center gap-1.5"
+                          className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-semibold flex items-center gap-1.5"
                         >
                           <Pencil className="w-3 h-3" />
                           Edit
                         </button>
                         <button
                           onClick={() => setPeriodToRevoke({ type, key })}
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 text-[11px] font-semibold flex items-center gap-1.5"
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-500/30 text-sm font-semibold flex items-center gap-1.5"
                         >
                           <Undo2 className="w-3 h-3" />
                           Revoke
@@ -1532,20 +1496,20 @@ export const AdminDashboard: React.FC = () => {
                 <h3 className="text-base font-display font-bold text-white mb-1 capitalize">
                   Revoke {periodToRevoke.type === 'weekly' ? `Week ${periodToRevoke.key}` : periodToRevoke.key} Winners?
                 </h3>
-                <p className="text-xs text-zinc-400 mb-6">
+                <p className="text-sm text-zinc-400 mb-6">
                   Students who only qualified for a certificate through this announcement will
                   immediately lose access to it. This can be re-announced later if needed.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleConfirmRevoke}
-                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
                   >
                     Yes, Revoke
                   </button>
                   <button
                     onClick={() => setPeriodToRevoke(null)}
-                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-xs border border-neutral-700 transition-all"
+                    className="flex-1 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-zinc-300 font-semibold text-sm border border-neutral-700 transition-all"
                   >
                     Cancel
                   </button>
@@ -1558,7 +1522,7 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Tab 4: Dev Controls */}
       {activeAdminTab === 'settings' && (
-        <div className={`${CARD} p-6 max-w-xl mx-auto space-y-4 font-sans text-xs`}>
+        <div className={`${CARD} p-6 max-w-xl mx-auto space-y-4 font-sans text-sm`}>
           <h2 className="text-sm font-display font-bold text-white flex items-center gap-2 mb-2">
             <RefreshCw className="w-4 h-4 text-aws-orange" />
             Developer & Demo Controls
@@ -1567,7 +1531,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="p-4 bg-neutral-950/60 border border-neutral-800 rounded-xl flex items-center justify-between gap-4">
             <div>
               <div className="font-semibold text-white">Replenish All Student Hearts (5/5)</div>
-              <div className="text-[11px] text-zinc-400 mt-0.5">Resets hearts to full for every registered student record in local storage — bypasses the 45-minute refill cooldown for the whole roster.</div>
+              <div className="text-sm text-zinc-400 mt-0.5">Resets hearts to full for every registered student record in local storage — bypasses the 45-minute refill cooldown for the whole roster.</div>
             </div>
             <button
               onClick={() => {
@@ -1583,7 +1547,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="p-4 bg-neutral-950/60 border border-neutral-800 rounded-xl flex items-center justify-between gap-4">
             <div>
               <div className="font-semibold text-white">Reset Local Database</div>
-              <div className="text-[11px] text-zinc-400 mt-0.5">Clear test storage and revert to fresh default roster</div>
+              <div className="text-sm text-zinc-400 mt-0.5">Clear test storage and revert to fresh default roster</div>
             </div>
             <button
               onClick={() => {
