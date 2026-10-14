@@ -59,7 +59,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onExitAdmin }) => {
       </header>
 
       {/* Main Admin Content or Lock Screen */}
-      <main className="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 w-full min-w-0 px-3 sm:px-5 lg:px-6 py-4 sm:py-6">
         {!isAuthenticated ? (
           /* Passcode Gate Screen */
           <div className="max-w-md mx-auto my-16 bg-neutral-900/60 border border-neutral-800 rounded-xl p-8 shadow-2xl backdrop-blur-md text-center">

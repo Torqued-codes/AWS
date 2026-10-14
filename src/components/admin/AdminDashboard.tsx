@@ -1040,7 +1040,6 @@ export const AdminDashboard: React.FC = () => {
                   </section>
                 );
               })}
-              {questions.some(q => !q.serviceName || !MCQ_SERVICE_TOPICS[q.serviceName]) && <section className="rounded-xl border border-amber-500/30 overflow-hidden"><div className="p-3 bg-amber-950/20 text-amber-300 text-xs font-bold">Legacy / uncategorised questions</div><div className="p-2 space-y-2">{questions.filter(q => !q.serviceName || !MCQ_SERVICE_TOPICS[q.serviceName]).map((q, idx) => <div key={q.id} className="p-3 bg-neutral-950/60 border border-neutral-800 rounded-lg text-[11px]"><p className="text-zinc-400 mb-1">W{q.weekNumber} · Legacy Q{idx + 1}</p><p className="text-zinc-200">{q.questionText}</p><button onClick={() => handleEditQuestionClick(q)} className="mt-2 p-1.5 rounded-lg bg-neutral-800 text-zinc-300"><Pencil className="w-3 h-3" /></button></div>)}</div></section>}
               {questions.length === 0 && (
                 <div className="py-8 text-center text-zinc-500 text-xs">No questions in the bank yet.</div>
               )}
