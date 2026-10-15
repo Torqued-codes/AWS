@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp, CheckCircle2, ExternalLink } from 'lucide-react';
-import { SERVICE_LEARNING, SERVICE_MCQ_SECTIONS } from './ServiceLearningPage';
+import { SERVICE_LEARNING } from './ServiceLearningPage';
 import { useGame } from '../../context/GameContext';
 
 export const McqBankPage: React.FC = () => {
