@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { BookOpen, ChevronDown, ChevronUp, CheckCircle2, ExternalLink } from 'lucide-react';
-import { SERVICE_LEARNING } from './ServiceLearningPage';
+import { SERVICE_LEARNING, SERVICE_MCQ_SECTIONS } from './ServiceLearningPage';
 import { useGame } from '../../context/GameContext';
-
 export const McqBankPage: React.FC = () => {
   const [openService, setOpenService] = useState<string | null>('AI/ML');
   const [openSection, setOpenSection] = useState<string | null>('AI/ML::Machine Learning Fundamentals');
@@ -10,10 +10,13 @@ export const McqBankPage: React.FC = () => {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const { questions: uploadedQuestions, currentUser } = useGame();
   const [attempts, setAttempts] = useState<Array<{ userId: string; service: string; topic: string; score: number; total: number; completedAt: string }>>(() => {
-    try { return JSON.parse(localStorage.getItem('aws-cynergy-mcq-attempts') || '[]'); } catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem('aws-cynergy-mcq-attempts') || '[]');
+    } catch {
+      return [];
+    }
   });
   const services = Object.entries(SERVICE_LEARNING);
-
   return (
     <div className="min-h-screen bg-[#080c13] px-4 py-8 text-zinc-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
@@ -69,8 +72,11 @@ export const McqBankPage: React.FC = () => {
                 {uploadedQuestions.filter(q => q.serviceName === service).length > 0 && <section className="overflow-hidden rounded-xl border border-cyan-400/30 bg-[#0b1820]">
                   <div className="border-b border-cyan-400/20 px-4 py-3"><span className="block text-xs font-bold uppercase tracking-wider text-cyan-300">Admin-published question sets</span><span className="mt-1 block text-xs text-zinc-400">Questions uploaded and reviewed by your college admin</span></div>
                   <div className="space-y-3 p-4">{uploadedQuestions.filter(q => q.serviceName === service).map((q, idx) => {
-                    const key = `uploaded-${q.id}`; const isChecked = !!checked[key]; const selected = answers[key];
-                    const options = q.options.map(o => o.text); const answerIndex = q.options.findIndex(o => o.key === q.correctOption);
+                    const key = `uploaded-${q.id}`;
+                    const isChecked = !!checked[key];
+                    const selected = answers[key];
+                    const options = q.options.map(o => o.text);
+                    const answerIndex = q.options.findIndex(o => o.key === q.correctOption);
                     return <article key={q.id} className="rounded-xl border border-white/10 bg-[#111720] p-4"><div className="mb-2 flex flex-wrap items-center gap-2"><span className="rounded-md bg-cyan-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-cyan-300">{q.topicName || q.awsDocTopic || 'General'}</span><span className="text-xs text-zinc-500">Question {idx + 1}</span></div><h3 className="font-semibold leading-6 text-white">{q.questionText}</h3><div className="mt-3 grid gap-2 sm:grid-cols-2">{options.map((option, oi) => <button key={`${q.id}-${oi}`} disabled={isChecked} onClick={() => setAnswers(prev => ({ ...prev, [key]: oi }))} className={`rounded-lg border px-3 py-2.5 text-left text-sm ${isChecked && oi === answerIndex ? 'border-emerald-400/60 bg-emerald-400/10 text-emerald-200' : selected === oi ? 'border-amber-400/60 bg-amber-400/10 text-amber-100' : 'border-white/10 bg-white/[0.02] text-zinc-300 hover:border-white/20'}`}><span className="mr-2 font-mono text-xs opacity-70">{String.fromCharCode(65 + oi)}.</span>{option}</button>)}</div>{!isChecked ? <button disabled={selected === undefined} onClick={() => { setChecked(prev => ({ ...prev, [key]: true })); const next = [...attempts, { userId: currentUser.id, service, topic: q.topicName || q.awsDocTopic || 'General', score: selected === answerIndex ? 1 : 0, total: 1, completedAt: new Date().toISOString() }]; setAttempts(next); try { localStorage.setItem('aws-cynergy-mcq-attempts', JSON.stringify(next)); } catch { /* browser storage may be disabled */ } }} className="mt-3 rounded-lg bg-amber-400 px-4 py-2 text-xs font-bold text-black disabled:opacity-40">Check answer</button> : <p className="mt-3 text-sm text-zinc-300">{selected === answerIndex ? 'Correct!' : `Correct answer: ${options[answerIndex]}.`} {q.explanation}</p>}</article>;
                   })}</div>
                 </section>}
@@ -82,8 +88,3 @@ export const McqBankPage: React.FC = () => {
     </div>
   );
 };
-
-
-
-
-
