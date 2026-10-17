@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, ExternalLink, BookOpen, CheckCircle2, XCircle, RotateCcw,
   BrainCircuit, BarChart3, Code2, ShieldCheck, Database, Link2, Cpu,
   Network, Building2, Settings, RadioTower, Zap, GraduationCap,
 } from 'lucide-react';
-
 type ServiceQuestion = {
   question: string;
   options: [string, string, string, string];
@@ -18,7 +17,6 @@ type ServiceInfo = {
   resourceNote: string;
   questions: [ServiceQuestion, ServiceQuestion, ServiceQuestion];
 };
-
 export const SERVICE_LEARNING: Record<string, ServiceInfo> = {
   'AI/ML': {
     description: 'Explore artificial intelligence, machine learning, and generative AI concepts on AWS.',
@@ -153,15 +151,12 @@ export const SERVICE_LEARNING: Record<string, ServiceInfo> = {
     ],
   },
 };
-
-
 /** Topic groupings for McqBankPage. Indices match each service's three questions above. */
 export type McqTopicSection = {
   title: string;
   description: string;
   questionIndices: number[];
 };
-
 export const SERVICE_MCQ_SECTIONS: Record<string, McqTopicSection[]> = {
   'AI/ML': [
     { title: 'Machine Learning Fundamentals', description: 'Core machine-learning concepts and training workflows', questionIndices: [0, 2] },
@@ -212,29 +207,28 @@ export const SERVICE_MCQ_SECTIONS: Record<string, McqTopicSection[]> = {
     { title: 'Safe AWS Experiments', description: 'Control permissions, costs, and resource cleanup', questionIndices: [2] },
   ],
 };
-
 const SERVICE_ICONS: Record<string, React.ElementType> = {
   'AI/ML': BrainCircuit, Analytics: BarChart3, 'Developer Tools': Code2,
   Security: ShieldCheck, Storage: Database, Integration: Link2, Compute: Cpu,
   Networking: Network, 'Community Center': Building2, Management: Settings,
   IoT: RadioTower, 'Challenge Zone': Zap,
 };
-
 type Props = { service: string; onBack: () => void };
-
 export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
+  // Every service should open at the top, regardless of the previous page's scroll.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [service]);
   const info = SERVICE_LEARNING[service] || SERVICE_LEARNING['Challenge Zone'];
   const Icon = SERVICE_ICONS[service] || GraduationCap;
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const correctCount = info.questions.reduce((total, q, index) => total + (checked[index] && answers[index] === q.answer ? 1 : 0), 0);
   const allAnswered = info.questions.every((_, index) => checked[index]);
-
   const resetQuiz = () => {
     setAnswers({});
     setChecked({});
   };
-
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#080c13] px-4 py-8 text-zinc-100 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1600px]">
@@ -256,7 +250,6 @@ export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
             </div>
           </div>
         </div>
-
         <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_400px] xl:gap-8">
           <section className="space-y-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -339,7 +332,6 @@ export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
               </div>
             )}
           </section>
-
           <aside className="space-y-4">
             <div className="rounded-2xl border border-amber-400/20 bg-[#111720] p-5">
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/10 text-amber-300">
@@ -367,23 +359,5 @@ export const ServiceLearningPage: React.FC<Props> = ({ service, onBack }) => {
     </div>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

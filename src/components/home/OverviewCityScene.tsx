@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   ShieldCheck, Cpu, BrainCircuit, Database, Network, BarChart3,
   Code2, Link2, Settings, RadioTower, Building2, Zap,
@@ -258,6 +258,20 @@ const serviceBuilding = (label: string, x: number, y: number) => {
   }
 };
 export const OverviewCityScene: React.FC<Props> = ({ onServiceSelect }) => {
+  // Restore the overview position after returning from a service learning page.
+  useEffect(() => {
+    const savedPosition = sessionStorage.getItem('aws-city-overview-scroll-y');
+    if (savedPosition !== null) {
+      sessionStorage.removeItem('aws-city-overview-scroll-y');
+      const scrollY = Number(savedPosition);
+      window.requestAnimationFrame(() => window.scrollTo({ top: Number.isFinite(scrollY) ? scrollY : 0, behavior: 'auto' }));
+    }
+  }, []);
+  const handleServiceSelect = (service: string) => {
+    // Save the exact page position before the parent switches to the service page.
+    sessionStorage.setItem('aws-city-overview-scroll-y', String(window.scrollY));
+    onServiceSelect(service);
+  };
   const road = 'M608,660 C430,760 760,860 580,1010 C400,1170 760,1320 610,1490 C430,1690 770,1810 610,1990 C420,2180 760,2330 610,2510 C520,2630 620,2750 610,2920';
   return (
     <section className="relative w-full overflow-hidden bg-[#173f1e]">
@@ -591,14 +605,14 @@ export const OverviewCityScene: React.FC<Props> = ({ onServiceSelect }) => {
           return (
             <g
               key={label}
-              onClick={() => onServiceSelect(label)}
+              onClick={() => handleServiceSelect(label)}
               style={{ cursor: 'pointer' }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onServiceSelect(label);
+                  handleServiceSelect(label);
                 }
               }}
             >
@@ -644,4 +658,3 @@ export const OverviewCityScene: React.FC<Props> = ({ onServiceSelect }) => {
     </section>
   );
 };
-
